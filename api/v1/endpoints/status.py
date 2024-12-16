@@ -10,7 +10,6 @@ from schemas.status import PlainStatusSchema
 router = APIRouter()
 
 
-# TODO: check what happens without the status code
 @router.get('/', status_code=status.HTTP_200_OK, response_model=PlainStatusSchema)
 async def get_status():
     """
