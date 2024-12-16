@@ -20,5 +20,5 @@ pip install -r requirements.txt
 
 ### Running
 ```shell
-uvicorn main:app --host 0.0.0.0 --port 8000 --log-level debug --workers 3 --reload
+.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-level debug --workers 3 --reload
 ```

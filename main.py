@@ -1,4 +1,6 @@
+from datetime import datetime, timezone
 from fastapi import FastAPI
+import os
 
 from api.v1.api import api_router
 
@@ -6,6 +8,9 @@ from api.v1.api import api_router
 app = FastAPI(debug=True, title="OutOfSight")
 app.include_router(router=api_router)
 
+os.environ['STARTUP_TIME'] = datetime.now(timezone.utc).isoformat()
+
 if __name__ == '__main__':
     import unicorn
+
     unicorn.run('main.app', reload=True, log_level="debug")

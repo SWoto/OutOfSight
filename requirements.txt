@@ -1,2 +1,4 @@
 fastapi>=0.109.2
 unicorn>=2.1.1
+psutil
+uvicorn
