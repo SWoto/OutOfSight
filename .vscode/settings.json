@@ -1,0 +1,17 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8",
+        "editor.formatOnSave": true,
+    },
+    "python.envFile": "${workspaceFolder}/.venv",
+    "files.exclude": {
+        "**/__pycache__": true,
+    },
+    "python.testing.pytestArgs": [
+        "tests",
+        "--rootdir=${workspaceFolder}/tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestPath": ".venv/bin/pytest",
+}

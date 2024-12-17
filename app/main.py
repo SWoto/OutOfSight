@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 import os
 
-from api.v1.api import api_router
+from app.api.v1.api import api_router
 
 
 app = FastAPI(debug=True, title="OutOfSight")
