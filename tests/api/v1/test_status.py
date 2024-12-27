@@ -7,7 +7,7 @@ class TestStatus():
 
     @pytest.mark.anyio
     async def test_get_status(self, async_client: AsyncClient):
-        response = await async_client.get(f"/status/")
+        response = await async_client.get(f"api/v1/status/")
         assert response.status_code == 200
 
         data = response.json()

@@ -20,7 +20,7 @@ async def get_status():
     uptime_secs = int((current_date - startup_time).total_seconds())
     cpu_usage = psutil.cpu_percent()
     memory_usage = psutil.virtual_memory().percent
-    if settings.ENV_STATE == "TEST":
+    if settings.ENV_STATE == "test":
         cpu_usage = 0.55 if cpu_usage < 0 else cpu_usage
         memory_usage = 0.55 if memory_usage < 0 else memory_usage
     return {

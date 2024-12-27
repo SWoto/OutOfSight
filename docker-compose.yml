@@ -20,8 +20,6 @@ services:
       dockerfile: Dockerfile
     container_name: oos-fastend
     restart: unless-stopped
-    environment:
-      ENV_STATE: 'dev'
     ports:
       - '8000:8000'
     expose:

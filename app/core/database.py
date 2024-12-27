@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import (
@@ -20,8 +21,28 @@ Session: AsyncSession = sessionmaker(
     bind=engine, autoflush=False, expire_on_commit=False, class_=AsyncSession)
 
 
+async def validate_db_connection(base_url: str) -> bool:
+    temp_engine = create_async_engine(base_url, echo=False)
+    try:
+        conn = await temp_engine.connect()
+        await conn.close()
+        return True
+    except (asyncio.TimeoutError, asyncio.CancelledError) as e:
+        logger.error(
+            f"Failed to connect to the database. Please check database connection information and ensure it is working. "
+            f"Example: Try using pgAdmin. Error: {e}"
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error while connecting to the database: {e}")
+    return False
+
+
 async def database_exists(base_url: str, database_name: str) -> bool:
     logger.debug(f"Checking if database '{database_name}' exists")
+
+    if not await validate_db_connection(base_url):
+        raise Exception("Could not establish a connection with the database.")
+
     temp_engine = create_async_engine(base_url, echo=False)
     async with temp_engine.connect() as conn:
         try:
@@ -48,6 +69,9 @@ async def create_database(base_url: str, database_name: str) -> bool:
                 await conn.execute(text(f"CREATE DATABASE {database_name}"))
                 logger.info(f"Database '{database_name}' created successfully")
                 return True
+            except CancelledError as e:
+                logger.error(
+                    f"Database creation was cancelled probably due to timeout. More information: {e}")
             except Exception as e:
                 logger.error(
                     f"Failed to create database '{database_name}': {e}")
