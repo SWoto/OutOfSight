@@ -18,6 +18,8 @@ class BaseConfig(BaseSettings):
 class GlobalConfig(BaseConfig):
     API_V1_STR: str = "/api/v1"
 
+    SQLALCHEMY_ECHO: Optional[bool] = False
+
     DATABASE_URL: Optional[str] = None
     POSTGRES_USER: Optional[str] = None
     POSTGRES_PASSWORD: Optional[str] = None
@@ -46,7 +48,7 @@ class TestConfig(GlobalConfig):
 
 @lru_cache
 def get_config(env_state: str):
-    configs = {"def": DevConfig, "prod": ProdConfig, "test": TestConfig}
+    configs = {"dev": DevConfig, "prod": ProdConfig, "test": TestConfig}
     return configs[env_state]()
 
 
