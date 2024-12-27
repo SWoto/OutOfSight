@@ -9,3 +9,7 @@ services:
       - app/core/.env
     volumes:
       - ./database/pgadmin-data/:/var/lib/pgadmin/
+    deploy:
+      resources:
+        limits:
+          memory: 250M

@@ -26,6 +26,32 @@ This solution integrates with AWS Cloud Services to ensure secure storage and se
 
 ## Contributing
 
+**Clone this repository**:
+   ```bash
+   git clone https://github.com/SWoto/OutOfSight.git
+   ```
+
+**Run Docker Compose**:
+```
+docker compose up
+```
+or 
+```
+docker compose up --build
+```
+to force building the containers.
+
+**Folders and Permissions**
+
+As instructed in [Mapped Files and Directories](https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html#mapped-files-and-directories), database folder needs to have the propper permissions,
+```
+sudo chown -R 5050:5050 <host_directory>
+```
+
+Note: database folder is a shared volume defined in docker-compose.yml for pgadmin.
+
+### Local Enviroment
+
 Follow these steps to set up your local environment for development.
 
 #### [Create a virtual environment in the terminal](https://code.visualstudio.com/docs/python/environments#_create-a-virtual-environment-in-the-terminal)
@@ -40,7 +66,7 @@ After creating the virtual environment ensure that it is used for running comman
 pip install -r requirements.txt
 ```
 
-## Running
+#### Running
 ```shell
 .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-level debug --workers 3 --reload
 ```
