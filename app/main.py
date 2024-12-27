@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from asgi_correlation_id import CorrelationIdMiddleware
 
 
-from app.core.configs import settings
+from app.core.configs import settings, DevConfig, TestConfig
 from app.api.v1.api import api_router
 from app.core.logging import configure_logging
 from app.core.database import create_tables, create_database
@@ -18,11 +18,9 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI, settings=settings):
     try:
         configure_logging()
-        print(f"Settings mode: {settings.ENV_STATE}")
-        if settings.ENV_STATE == "test" or settings.ENV_STATE == "dev":
+        if isinstance(settings, TestConfig) or isinstance(settings, DevConfig):
             await create_database(settings.DATABASE_URL, settings.POSTGRES_DB)
             await create_tables()
-
         yield
     except Exception as e:
         logger.error(f"Error during application startup: {e}")

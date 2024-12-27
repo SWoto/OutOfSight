@@ -1,7 +1,7 @@
 import logging
 from logging.config import dictConfig
 
-from app.core.configs import DevConfig, ProdConfig, settings
+from app.core.configs import DevConfig, TestConfig, ProdConfig, settings
 
 
 def obfuscated(email: str, non_obfuscated_length: int, min_obfuscation: int = 8) -> str:
@@ -76,7 +76,7 @@ def configure_logging() -> None:
                 "uvicorn": {"handlers": ["default", "rotating_file"], "level": "INFO"},
                 "src": {
                     "handlers": handlers,
-                    "level": "DEBUG" if isinstance(settings, DevConfig) else "INFO",
+                    "level": "DEBUG" if (isinstance(settings, DevConfig) or isinstance(settings, TestConfig)) else "INFO",
                     "propagate": False
                 },
             }

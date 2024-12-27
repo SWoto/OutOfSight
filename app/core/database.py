@@ -63,15 +63,12 @@ async def create_database(base_url: str, database_name: str) -> bool:
         logger.warning(
             f"Database '{database_name}' does not exist, creating it")
         temp_engine = create_async_engine(
-            base_url, base_url, isolation_level="AUTOCOMMIT", echo=True)
+            base_url, isolation_level="AUTOCOMMIT", echo=True)
         async with temp_engine.connect() as conn:
             try:
                 await conn.execute(text(f"CREATE DATABASE {database_name}"))
                 logger.info(f"Database '{database_name}' created successfully")
                 return True
-            except CancelledError as e:
-                logger.error(
-                    f"Database creation was cancelled probably due to timeout. More information: {e}")
             except Exception as e:
                 logger.error(
                     f"Failed to create database '{database_name}': {e}")
