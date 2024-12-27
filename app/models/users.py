@@ -2,6 +2,9 @@ from sqlalchemy import Column, String, Boolean, DateTime, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
+from sqlalchemy.orm import relationship
+
+
 from app.models.base import BaseModel
 
 
@@ -13,6 +16,9 @@ class UserModel(BaseModel):
     password = Column(String(256), nullable=False)
     confirmed = Column(Boolean, default=False)
     confirmed_on = Column(DateTime, nullable=True)
+
+    files = relationship("FileModel", back_populates="users",
+                         cascade="all, delete-orphan", lazy='selectin')
 
     def __init__(self, *args, **kwargs):
         super(UserModel, self).__init__(*args, **kwargs)
