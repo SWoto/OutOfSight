@@ -1,0 +1,24 @@
+FROM python:3.11.7
+
+# upgrade pip
+RUN pip install --upgrade pip
+
+# get curl for healthchecks
+RUN apt install curl
+
+RUN adduser nonroot --disabled-password
+RUN mkdir -p /home/pre-oos/
+RUN chown -R nonroot:nonroot /home/pre-oos
+
+WORKDIR /home/pre-oos
+USER nonroot
+
+COPY --chown=nonroot:nonroot requirements.txt requirements.txt
+
+ENV VIRTUAL_ENV=/home/pre-oos/venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip install -r requirements.txt
+
+# random task to block container termination
+CMD ["tail", "-f", "/dev/null"]

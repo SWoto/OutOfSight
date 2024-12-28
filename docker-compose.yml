@@ -9,25 +9,14 @@ services:
       - app/core/.env
     volumes:
       - ./database/pgadmin-data/:/var/lib/pgadmin/
-    deploy:
-      resources:
-        limits:
-          memory: 250M
 
   oos-fastapi-backend:
     build:
       context: app
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: oos-fastend
     restart: unless-stopped
     ports:
-      - '8000:8000'
-    expose:
-      - 8000
-    deploy:
-      resources:
-        limits:
-          memory: 500M
+      - '80:8000'
     volumes:
-      - ./logs/:/home/logs/
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug --workers 3 --reload
+      - .:/home/pre-oos/oos

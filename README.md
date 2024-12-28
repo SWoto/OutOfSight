@@ -54,21 +54,25 @@ Note: database folder is a shared volume defined in docker-compose.yml for pgadm
 
 Follow these steps to set up your local environment for development.
 
-#### [Create a virtual environment in the terminal](https://code.visualstudio.com/docs/python/environments#_create-a-virtual-environment-in-the-terminal)
-```shell
-# You may need to run `sudo apt-get install python3-venv` first on Debian-based OSs
-python3 -m venv .venv
-```
-After creating the virtual environment ensure that it is used for running commands on the terminal.
-
-#### Installing dependencies
-```shell
-pip install -r requirements.txt
+#### Docker
+Run the docker-compose file pointing to the Dockerfile.dev for development and test, access the containet using vscode remove settion and use ssh port forwarding to enable remove connection to the AWS RDS database through EC2 permissions: `ssh -i .ssh/<my-key>.pem -4 -fNT -L 3307:<my-AWS-PostgreSQL-Endpoint>:5432 ec2-user@<my-EC2-Public-IPv4-DNS>`.
+Example:
+```bash
+ssh -i .ssh/my-key.pem -4 -fNT -L 3307:oos-database-1.acbd12345.region.rds.amazonaws.com:543
+2 ec2-user@ec2-12-34-56-78.region.compute.amazonaws.com
 ```
 
-#### Running
+Then change the `.env` file parameters to:
+```
+POSTGRES_PORT=3307
+POSTGRES_HOST=host.docker.internal
+```
+
+This way, changes made in the code within the container will reflect the code in the host env. It is possible to git clone inside the container, but then there is going to be a need to clone twice, outside to download docker files and inside to run the code, so I prefered to use this method.
+
+Then run the application run the command below, just make sure that the terminal is using the venv configured in the dockerfile.dev.
 ```shell
-.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --log-level debug --workers 3 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug --workers 3 --reload
 ```
 
 # AWS Setup

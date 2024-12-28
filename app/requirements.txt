@@ -1,5 +1,4 @@
 fastapi>=0.115.6
-unicorn>=2.1.1
 psutil>=6.1.0
 uvicorn>=0.34.0
 httpx>=0.28.1
