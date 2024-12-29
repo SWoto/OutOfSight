@@ -55,23 +55,27 @@ Note: database folder is a shared volume defined in docker-compose.yml for pgadm
 Follow these steps to set up your local environment for development.
 
 #### Docker
-Run the docker-compose file pointing to the Dockerfile.dev for development and test, access the containet using vscode remove settion and use ssh port forwarding to enable remove connection to the AWS RDS database through EC2 permissions: `ssh -i .ssh/<my-key>.pem -4 -fNT -L 3307:<my-AWS-PostgreSQL-Endpoint>:5432 ec2-user@<my-EC2-Public-IPv4-DNS>`.
+
+To begin, use the docker-compose file with the Dockerfile.dev for development and testing. Access the container through VS Code's remote development feature and configure SSH port forwarding for remote connection to an AWS RDS database. This is done using EC2 permissions. For example, execute the following command: `ssh -i .ssh/<my-key>.pem -4 -fNT -L 3307:<my-AWS-PostgreSQL-Endpoint>:5432 ec2-user@<my-EC2-Public-IPv4-DNS>`.
 Example:
 ```bash
 ssh -i .ssh/my-key.pem -4 -fNT -L 3307:oos-database-1.acbd12345.region.rds.amazonaws.com:543
 2 ec2-user@ec2-12-34-56-78.region.compute.amazonaws.com
 ```
 
-Then change the `.env` file parameters to:
-```
+Once the SSH tunnel is set up, modify the `.env` file parameters to point to the local forwarded port:
+```makefile
 POSTGRES_PORT=3307
 POSTGRES_HOST=host.docker.internal
 ```
 
-This way, changes made in the code within the container will reflect the code in the host env. It is possible to git clone inside the container, but then there is going to be a need to clone twice, outside to download docker files and inside to run the code, so I prefered to use this method.
+This approach ensures changes made to the code inside the container are synchronized with the host environment. While it’s possible to clone the repository inside the container, this would require cloning it twice—once on the host to access Docker files and once inside to run the application. Using the described method avoids this duplication.
 
-Then run the application run the command below, just make sure that the terminal is using the venv configured in the dockerfile.dev.
-```shell
+#### Running the Application
+
+After setting up the container, ensure the terminal is using the virtual environment configured in `Dockerfile.dev`. Then, start the application using the following command:
+
+```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug --workers 3 --reload
 ```
 
@@ -266,7 +270,7 @@ echo "Setup complete. Git, Docker and Docker Compose are ready to use."
    - Modify the **Inbound Rules** to allow the necessary traffic:
      - **HTTP (Port 80)**: For your IP only or open if needed.
      - **SSH (Port 22)**: For administrative access (from your IP only).
-         - If you're using MacOS, note that private relay might disturb this proccess if you're filtering with "My IP".
+         - If you're using MacOS, note that private relay might disturb this proccess if you're filtering with "My IP", given that safari is going to 'use' a different IP from VSCode. An alternativa is to set the 'MyIP' through another browswer, like firefox, instead of safari. 
      - **Custom ICMP - IPv4, Echo Request**: To enable ping to the EC2, select anywhere IPv4 or from your IP only.
    - Save the updated rules.
 
