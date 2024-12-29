@@ -1,5 +1,4 @@
 import logging
-from logging.config import dictConfig
 
 from app.core.configs import DevConfig, TestConfig, ProdConfig, settings
 
@@ -23,14 +22,18 @@ class EmailObfuscationFilter(logging.Filter):
 
 
 handlers = ["default", "rotating_file"]
-# TODO: when prod env, implement logging to AWS/S3/CloudWatch
+# TODO: when prod env, implement something more complete, like a log db base on isinstance of ProdConfig.
 
 
 def configure_logging() -> None:
-    dictConfig(
+    logging.config.dictConfig(
         {
             "version": 1,
             "disable_existing_loggers": False,
+            "root":{
+                "handlers" : handlers,
+                "level": "DEBUG"
+            },
             "filters": {
                 "correlation_id": {
                     "()": "asgi_correlation_id.CorrelationIdFilter",
@@ -46,7 +49,7 @@ def configure_logging() -> None:
                 "console": {
                     "class": "logging.Formatter",
                     "datefmt": "%Y-%m-%dT%H:%M:%S%z",
-                    "format": "(%(correlation_id)s) %(name)s:%(lineno)d - %(message)s",
+                    "format": "%(asctime)s (%(correlation_id)s) %(name)s:%(lineno)d - %(message)s",
                 },
                 "file": {
                     "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
@@ -73,7 +76,11 @@ def configure_logging() -> None:
                 },
             },
             "loggers": {
-                "uvicorn": {"handlers": ["default", "rotating_file"], "level": "INFO"},
+                "uvicorn": {
+                    "handlers": handlers, 
+                    "level": "DEBUG" if (isinstance(settings, DevConfig) or isinstance(settings, TestConfig)) else "INFO",
+                    "propagate": False
+                },
                 "src": {
                     "handlers": handlers,
                     "level": "DEBUG" if (isinstance(settings, DevConfig) or isinstance(settings, TestConfig)) else "INFO",
