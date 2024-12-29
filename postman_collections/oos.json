@@ -60,7 +60,7 @@
 					],
 					"id": "24da87a6-eeee-4001-83e0-41df3154f09b",
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
