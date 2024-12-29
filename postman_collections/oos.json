@@ -108,7 +108,7 @@
 					"response": []
 				},
 				{
-					"name": "Get User by id /user/<id> Copy",
+					"name": "Update User by id /user/<id>",
 					"event": [
 						{
 							"listen": "test",
@@ -130,7 +130,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"nickname\": \"Devin14\",\n    \"email\": \"Xander.Leannon29@hotmail.com\"\n}",
+							"raw": "{\n    \"nickname\": \"{{$randomUserName}}\",\n    \"email\": \"{{$randomEmail}}\",\n    \"password\": \"{{rand_password}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
