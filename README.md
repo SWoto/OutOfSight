@@ -32,12 +32,15 @@ This solution integrates with AWS Cloud Services to ensure secure storage and se
    ```
 
 **Run Docker Compose**:
+The second command of each block shows how to specify the compose file to be run.
 ```
 docker compose up
+docker compose -f docker-compose.yml up
 ```
 or 
 ```
 docker compose up --build
+docker compose -f docker-compose.yml up --build
 ```
 to force building the containers.
 
@@ -56,7 +59,7 @@ Follow these steps to set up your local environment for development.
 
 #### Docker
 
-To begin, use the docker-compose file with the Dockerfile.dev for development and testing. Access the container through VS Code's remote development feature and configure SSH port forwarding for remote connection to an AWS RDS database. This is done using EC2 permissions. For example, execute the following command: `ssh -i .ssh/<my-key>.pem -4 -fNT -L 3307:<my-AWS-PostgreSQL-Endpoint>:5432 ec2-user@<my-EC2-Public-IPv4-DNS>`.
+To begin, use the docker-compose file with the Dockerfile.dev for development and testing (`docker compose -f docker-compose.dev.yml up`). Access the container through VS Code's remote development feature and configure SSH port forwarding for remote connection to an AWS RDS database. This is done using EC2 permissions. For example, execute the following command: `ssh -i .ssh/<my-key>.pem -4 -fNT -L 3307:<my-AWS-PostgreSQL-Endpoint>:5432 ec2-user@<my-EC2-Public-IPv4-DNS>`.
 Example:
 ```bash
 ssh -i .ssh/my-key.pem -4 -fNT -L 3307:oos-database-1.acbd12345.region.rds.amazonaws.com:543
