@@ -106,6 +106,32 @@
 						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
 					},
 					"response": []
+				},
+				{
+					"name": "Get User by id /user/<id> Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "2d051bc2-dc60-471c-81fe-95be2f81f664",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/user/{{id}}",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
 				}
 			],
 			"id": "bc1a5f15-39ef-4ea2-a68d-6bab0f377cb4"
