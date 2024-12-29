@@ -7,8 +7,8 @@ from asgi_correlation_id import CorrelationIdMiddleware
 
 
 from app.core.configs import settings, DevConfig, TestConfig
-from app.api.v1.api import api_router
 from app.core.logging import configure_logging
+from app.api.v1.api import api_router
 from app.core.database import create_tables, create_database
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ async def lifespan(app: FastAPI, settings=settings):
 
     finally:
         logger.info("Application shutdown complete.")
+
 
 app = FastAPI(debug=True, title="OutOfSight", lifespan=lifespan)
 app.add_middleware(CorrelationIdMiddleware)
