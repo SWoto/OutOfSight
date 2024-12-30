@@ -165,7 +165,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"nickname\": \"{{$randomUserName}}\",\n    \"email\": \"{{$randomEmail}}\",\n    \"password\": \"{{rand_password}}\"\n}",
+							"raw": "{\n    \"nickname\": \"{{$randomUserName}}\",\n    \"password\": \"{{rand_password}}\",\n}",
 							"options": {
 								"raw": {
 									"language": "json"
