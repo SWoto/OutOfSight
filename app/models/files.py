@@ -4,8 +4,8 @@ from sqlalchemy.orm import relationship, mapped_column
 from app.models.base import BaseModel
 
 
-class FileModel(BaseModel):
-    __tablenames__ = "files"
+class FilesModel(BaseModel):
+    __tablename__ = "files"
 
     filename = Column(String(256), nullable=False)
     path = Column(String(256), nullable=False)
@@ -14,7 +14,7 @@ class FileModel(BaseModel):
 
     user_id = mapped_column(ForeignKey("users.id"),
                             unique=False, nullable=False)
-    user = relationship("UserModel", back_populates="files", lazy='selectin')
+    user = relationship("UsersModel", back_populates="files", lazy='selectin')
 
     def __init__(self, *args, **kwargs):
-        super(FileModel, self).__init__(*args, **kwargs)
+        super(FilesModel, self).__init__(*args, **kwargs)

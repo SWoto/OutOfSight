@@ -1,27 +1,29 @@
-from sqlalchemy import Column, String, Boolean, DateTime, select
+from sqlalchemy import Column, String, Boolean, DateTime, select, LargeBinary
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
+from datetime import datetime
 
 from sqlalchemy.orm import relationship
 
-
+from app.core.security import get_hashed_password
 from app.models.base import BaseModel
 
 
-class UserModel(BaseModel):
+class UsersModel(BaseModel):
     __tablename__ = "users"
 
-    nickname = Column(String(256), nullable=False)
-    email = Column(String(256), unique=True, index=True)
-    password = Column(String(256), nullable=False)
-    confirmed = Column(Boolean, default=False)
-    confirmed_on = Column(DateTime, nullable=True)
+    nickname: str = Column(String(256), nullable=False)
+    email: str = Column(String(256), unique=True, index=True)
+    password: bytes = Column(LargeBinary, nullable=False)
+    confirmed: bool = Column(Boolean, default=False)
+    confirmed_on: datetime = Column(DateTime, nullable=True)
 
-    files = relationship("FileModel", back_populates="users",
+    files = relationship("FilesModel", back_populates="user",
                          cascade="all, delete-orphan", lazy='selectin')
 
     def __init__(self, *args, **kwargs):
-        super(UserModel, self).__init__(*args, **kwargs)
+        super(UsersModel, self).__init__(*args, **kwargs)
+        self.password = get_hashed_password(kwargs['password'])
 
     @classmethod
     async def find_by_email(cls, email: str, db: AsyncSession) -> Optional["UserModel"]:
