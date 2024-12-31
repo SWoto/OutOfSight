@@ -1,6 +1,6 @@
 import logging
-from pydantic import BaseModel, EmailStr, field_validator, PositiveInt, model_validator
-from typing import Optional, Union
+from pydantic import BaseModel, EmailStr, field_validator, UUID4, model_validator
+from typing import Union
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class PostPutUserSchema(PlainUserSchema):
 
 
 class ReturnUserSchema(PlainUserSchema):
-    id: PositiveInt
+    id: UUID4
     confirmed: bool
 
 class PatchUserSchema(BaseModel):

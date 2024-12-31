@@ -1,15 +1,14 @@
-from sqlalchemy import Column, Sequence, Integer, DateTime, func, select, inspect
+import uuid
+from sqlalchemy import Column, DateTime, func, select, UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.configs import settings
 
-
 class BaseModel(settings.DBBaseModel):
     __abstract__ = True
 
-    id = Column(Integer, Sequence('user_id_seq',
-                start=1, increment=1), primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_on = Column(DateTime, default=func.now(), nullable=False)
     modified_on = Column(DateTime, default=func.now(),
                          onupdate=func.now(), nullable=False)
@@ -41,7 +40,7 @@ class BaseModel(settings.DBBaseModel):
                 f"Failed to delete {self.__class__.__name__} to the database.") from e
 
     @classmethod
-    async def find_by_id(cls, id: int, db: AsyncSession):
+    async def find_by_id(cls, id: UUID, db: AsyncSession):
         query = select(cls).filter_by(id=id)
         result = await db.execute(query)
         return result.scalars().unique().one_or_none()
