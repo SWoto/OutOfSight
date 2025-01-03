@@ -185,7 +185,8 @@
 							"script": {
 								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
 								"exec": [
-									""
+									"var data = pm.response.json();",
+									"pm.environment.set(\"access_token\", data.access_token);"
 								],
 								"type": "text/javascript",
 								"packages": {}
