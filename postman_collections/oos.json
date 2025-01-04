@@ -113,14 +113,15 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"id": "cf03b589-96a9-44f1-ade5-166950f3b8d3",
 								"exec": [
 									"pm.test(\"Status code is 202\", function () {",
 									"    pm.response.to.have.status(202);",
 									"});",
 									"",
-									"pm.environment.set(\"email\", data.email);",
-									"pm.environment.set(\"id\", data.id);"
+									"var data = pm.response.json();",
+									"",
+									"pm.environment.set(\"email\", data.email);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -159,8 +160,7 @@
 									"",
 									"var data = pm.response.json();",
 									"",
-									"pm.environment.set(\"email\", data.email);",
-									"pm.environment.set(\"id\", data.id);"
+									"pm.environment.set(\"email\", data.email);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -249,9 +249,9 @@
 								"token": "{{access_token}}"
 							}
 						},
-						"method": "POST",
+						"method": "GET",
 						"header": [],
-						"url": "{{url}}:{{port}}{{API_STR}}/user",
+						"url": "{{url}}:{{port}}{{API_STR}}/user/",
 						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
 					},
 					"response": []
