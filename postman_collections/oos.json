@@ -157,6 +157,8 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
+									"var data = pm.response.json();",
+									"",
 									"pm.environment.set(\"email\", data.email);",
 									"pm.environment.set(\"id\", data.id);"
 								],
