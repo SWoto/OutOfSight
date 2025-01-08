@@ -30,3 +30,11 @@ class UsersModel(BaseModel):
         query = select(cls).filter_by(email=email)
         result = await db.execute(query)
         return result.scalars().unique().one_or_none()
+
+
+    def get_confirmed(self) -> bool:
+        return self.confirmed
+    
+    def confirm_register(self) -> None:
+        self.confirmed = True
+        self.confirmed_on = datetime.now()

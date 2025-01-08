@@ -1,13 +1,13 @@
+import secrets
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional, Any
-
 from sqlalchemy.orm import declarative_base
-
 from functools import lru_cache
 
 
 class BaseConfig(BaseSettings):
     ENV_STATE: Optional[str] = None
+    ALGORITHM: str = "HS256"
 
     """Loads the dotenv file. Including this is necessary to get
     pydantic to load a .env file."""
@@ -18,6 +18,10 @@ class BaseConfig(BaseSettings):
 class GlobalConfig(BaseConfig):
     API_V1_STR: str = "/api/v1"
 
+    JWT_SECRET: str = secrets.token_hex(64)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60*24*1  # 1 day
+    CONFIRMATION_TOKEN_EXPIRE_MINUTES: int = 30  # 30 minutes
+
     SQLALCHEMY_ECHO: Optional[bool] = False
 
     DATABASE_URL: Optional[str] = None
@@ -27,12 +31,14 @@ class GlobalConfig(BaseConfig):
     POSTGRES_PORT: Optional[int] = None
     POSTGRES_HOST: Optional[str] = None
 
+    REDIS_HOST: Optional[str] = None
+    REDIS_PORT: Optional[str] = None
+
     DBBaseModel: Any = declarative_base()
 
     def __init__(self):
         super(GlobalConfig, self).__init__()
         self.DATABASE_URL = f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-
 
 class DevConfig(GlobalConfig):
     model_config = SettingsConfigDict(env_prefix="DEV_")
