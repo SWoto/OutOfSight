@@ -8,6 +8,7 @@ def get_hashed_password(password: SecretStr) -> bytes:
     hashed_password = bcrypt.hashpw(password=pwd_bytes, salt=bcrypt.gensalt())
     return hashed_password
 
+
 def check_password(provided_password: str, hashed_password: bytes) -> bool:
     pwd = provided_password
     password_byte_enc = str(pwd).encode('utf-8')
