@@ -79,3 +79,200 @@ class TestUsers(BaseUser):
         response = await self.login_user(async_client, self.data["email"], "password")
         
         assert response.status_code == 401
+
+    @pytest.mark.anyio
+    async def test_get_user_by_id(self, confirmed_user, async_client: AsyncClient):
+        response = await async_client.get(f"/api/v1/user/{confirmed_user.id}")
+        assert response.status_code == 200
+
+        user_data = response.json()
+        assert user_data["email"] == self.data["email"]
+        assert user_data["nickname"] == self.data["nickname"]
+        assert user_data["id"] == str(confirmed_user.id)
+
+
+    @pytest.mark.anyio
+    async def test_get_user_by_id_invalid_id(self, async_client: AsyncClient):
+        fake_id = "0"
+        response = await async_client.get(f"/api/v1/user/{fake_id}")
+        assert response.status_code == 422
+
+
+    @pytest.mark.anyio
+    async def test_get_user_by_id_wrong_id(self, async_client: AsyncClient):
+        fake_id = "00000000-0000-0000-0000-000000000000"
+        response = await async_client.get(f"/api/v1/user/{fake_id}")
+        assert response.status_code == 404
+
+    @pytest.mark.anyio
+    async def test_get_user_by_token(self, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        response = await async_client.get("/api/v1/user/", headers=headers)
+        assert response.status_code == 200
+
+        user_data = response.json()
+        assert user_data["email"] == self.data["email"]
+        assert user_data["nickname"] == self.data["nickname"]
+
+
+    @pytest.mark.anyio
+    async def test_get_user_by_token_invalid_token(self, async_client: AsyncClient):
+        headers = {"Authorization": "Some rubish"}
+        response = await async_client.get("/api/v1/user/", headers=headers)
+        assert response.status_code == 401
+
+
+    @pytest.mark.anyio
+    async def test_put_user(self, confirmed_user, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        updated_data = {
+            "email": "updated@laland.pl",
+            "nickname": "Updated Nickname",
+            "password": "N3wSup3rDup3rPassword#1"
+        }
+
+        response = await async_client.put(f"/api/v1/user/{confirmed_user.id}", json=updated_data, headers=headers)
+        assert response.status_code == 202
+
+        user_data = response.json()
+        assert user_data["email"] == updated_data["email"]
+        assert user_data["nickname"] == updated_data["nickname"]
+
+
+    @pytest.mark.anyio
+    async def test_put_user_not_found(self, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        fake_id = "00000000-0000-0000-0000-000000000000"
+        updated_data = {
+            "email": "updated@laland.pl",
+            "nickname": "Updated Nickname",
+            "password": "N3wSup3rDup3rPassword#1"
+        }
+
+        response = await async_client.put(f"/api/v1/user/{fake_id}", json=updated_data, headers=headers)
+        assert response.status_code == 404
+
+
+    @pytest.mark.anyio
+    async def test_put_user_invalid_id(self, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        fake_id = "0"
+        updated_data = {
+            "email": "updated@laland.pl",
+            "nickname": "Updated Nickname",
+            "password": "N3wSup3rDup3rPassword#1"
+        }
+
+        response = await async_client.put(f"/api/v1/user/{fake_id}", json=updated_data, headers=headers)
+        assert response.status_code == 422
+
+
+    @pytest.mark.anyio
+    async def test_put_user_invalid_email(self, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        fake_id = "0"
+        updated_data = {
+            "email": "updated",
+            "nickname": "Updated Nickname",
+            "password": "N3wSup3rDup3rPassword#1"
+        }
+
+        response = await async_client.put(f"/api/v1/user/{fake_id}", json=updated_data, headers=headers)
+        assert response.status_code == 422
+
+
+    @pytest.mark.anyio
+    async def test_put_user_invalid_password(self, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        fake_id = "0"
+        updated_data = {
+            "email": "updated@laland.pl",
+            "nickname": "Updated Nickname",
+            "password": "1234"
+        }
+
+        response = await async_client.put(f"/api/v1/user/{fake_id}", json=updated_data, headers=headers)
+        assert response.status_code == 422
+
+
+    @pytest.mark.anyio
+    async def test_put_user_missing_data(self, confirmed_user, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        updated_data = {
+            "email": "updated@laland.pl",
+            "nickname": "Updated Nickname",
+            "password": "N3wSup3rDup3rPassword#1"
+        }
+
+        for key in updated_data:
+            new_data = updated_data.copy()
+            new_data.pop(key)
+            response = await async_client.put(f"/api/v1/user/{confirmed_user.id}", json=new_data, headers=headers)
+            assert response.status_code == 422
+
+
+    @pytest.mark.anyio
+    async def test_patch_user_nickname(self, confirmed_user, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        patch_data = {"nickname": "Patched Nickname"}
+        
+        response = await async_client.patch(f"/api/v1/user/{confirmed_user.id}", json=patch_data, headers=headers)
+        assert response.status_code == 202
+
+        user_data = response.json()
+        assert user_data["nickname"] == patch_data["nickname"]
+
+
+    @pytest.mark.anyio
+    async def test_patch_user_invalid_nickname(self, confirmed_user, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        patch_data = {"nickname": ""}  # Invalid nickname
+
+        response = await async_client.patch(f"/api/v1/user/{confirmed_user.id}", json=patch_data, headers=headers)
+        assert response.status_code == 422
+
+
+    @pytest.mark.anyio
+    async def test_patch_user_password(self, confirmed_user, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        patch_data = {"password": "SecurePass#123"}
+        
+        response = await async_client.patch(f"/api/v1/user/{confirmed_user.id}", json=patch_data, headers=headers)
+        assert response.status_code == 202
+
+        user_data = response.json()
+        assert user_data["email"] == self.data["email"]  # Verify other data remain unchanged
+
+
+    @pytest.mark.anyio
+    async def test_patch_user_invalid_password(self, confirmed_user, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        invalid_passwords = ["short", "12345678", "", None, "abcdefgh"]
+
+        for pwd in invalid_passwords:
+            patch_data = {"password": pwd}
+            response = await async_client.patch(f"/api/v1/user/{confirmed_user.id}", json=patch_data, headers=headers)
+            assert response.status_code == 422
+
+
+    @pytest.mark.anyio
+    async def test_patch_user_email(self, confirmed_user, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        patch_data = {"email": "newemail@example.com"}
+        
+        response = await async_client.patch(f"/api/v1/user/{confirmed_user.id}", json=patch_data, headers=headers)
+        assert response.status_code == 202
+
+        user_data = response.json()
+        assert user_data["email"] == patch_data["email"]
+
+
+    @pytest.mark.anyio
+    async def test_patch_user_invalid_email(self, confirmed_user, logged_in_token, async_client: AsyncClient):
+        headers = {"Authorization": f"Bearer {logged_in_token}"}
+        invalid_emails = ["plainaddress", "missingatsign.com", "@missinguser.com", "", None]
+
+        for email in invalid_emails:
+            patch_data = {"email": email}
+            response = await async_client.patch(f"/api/v1/user/{confirmed_user.id}", json=patch_data, headers=headers)
+            assert response.status_code == 422

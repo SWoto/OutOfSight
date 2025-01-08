@@ -58,7 +58,7 @@ class BaseUser():
     async def logged_in_token(cls, confirmed_user, async_client: AsyncClient) -> str:
         response = await cls.login_user(async_client, cls.data["email"], cls.data["password"])
 
-        return response.json(["access_token"])
+        return response.json()["access_token"]
     
 
     @pytest.fixture(autouse=True)
