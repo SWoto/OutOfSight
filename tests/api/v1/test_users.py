@@ -258,7 +258,7 @@ class TestUsers(BaseUser):
     @pytest.mark.anyio
     async def test_patch_user_email(self, confirmed_user, logged_in_token, async_client: AsyncClient):
         headers = {"Authorization": f"Bearer {logged_in_token}"}
-        patch_data = {"email": "newemail@example.com"}
+        patch_data = {"email": "updated@laland.pl"}
         
         response = await async_client.patch(f"/api/v1/user/{confirmed_user.id}", json=patch_data, headers=headers)
         assert response.status_code == 202
