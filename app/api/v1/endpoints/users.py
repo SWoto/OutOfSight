@@ -127,3 +127,26 @@ async def patch_user(id: UUID, user: PatchUserSchema, db: Annotated[AsyncSession
 
     new_requested_user = await UsersModel.find_by_id(id, db)
     return new_requested_user
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Users"], summary="Delete user", description="Get exing user from ID and deletes it")
+async def delete_user_by_id(id: UUID, db: Annotated[AsyncSession, Depends(get_db_session)]):
+    requested_user = await UsersModel.find_by_id(id, db)
+    if not requested_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist.")
+    
+
+    async with db as session:
+        requested_user = await UsersModel.find_by_id(id, session)
+        await requested_user.delete_from_db(session)
+
+    return
+
+    
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT, tags=["Users"], summary="Delete user", description="Get exing user from ID and deletes it")
+async def delete_user_by_token(current_user: Annotated[UsersModel, Depends(get_current_user)], db: Annotated[AsyncSession, Depends(get_db_session)]):
+    async with db as session:
+        requested_user = await UsersModel.find_by_id(current_user.id, session)
+        await requested_user.delete_from_db(session)
+
+    return

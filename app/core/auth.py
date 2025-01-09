@@ -125,7 +125,7 @@ async def validate_token(token: Annotated[str, Depends(oauth2_scheme)], type: Li
     return payload
 
 
-async def get_current_user(payload: Annotated[dict, Depends(validate_token)], db: Annotated[AsyncSession, Depends(get_db_session)]) -> Optional[UsersModel]:
+async def get_current_user(payload: Annotated[dict, Depends(validate_token)], db: Annotated[AsyncSession, Depends(get_db_session)]) -> UsersModel:
     user_id = payload.get("sub")
     user = await UsersModel.find_by_id(user_id, db)
     if not user:
