@@ -117,7 +117,21 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
-									"});"
+									"});",
+									"",
+									"// Parse the JSON response",
+									"const roles = pm.response.json();",
+									"",
+									"// Find the role with authority 0",
+									"const roleWithAuthorityZero = roles.find(role => role.authority === 0);",
+									"",
+									"if (roleWithAuthorityZero) {",
+									"    // Set the environment variable",
+									"    pm.environment.set(\"role_id\", roleWithAuthorityZero.id);",
+									"    console.log(`Environment variable 'role_id' set to: ${roleWithAuthorityZero.id}`);",
+									"} else {",
+									"    console.error(\"No role found with authority 0\");",
+									"}"
 								],
 								"type": "text/javascript",
 								"packages": {}
