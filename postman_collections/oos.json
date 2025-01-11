@@ -56,6 +56,18 @@
 								"type": "text/javascript",
 								"packages": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "2ce844e1-532b-4103-8367-16aa8a053771",
+								"exec": [
+									"const randomInt = Math.floor(Math.random() * 98) + 1;",
+									"pm.environment.set(\"random_authority\", randomInt);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
 					],
 					"id": "cd207f61-13b8-4b01-8aab-0742c71aae67",
@@ -64,7 +76,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"authority\": 2,\n    \"name\": \"Bananinha\"\n}",
+							"raw": "{\n    \"authority\": {{random_authority}},\n    \"name\": \"{{$randomAdjective}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
