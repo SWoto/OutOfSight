@@ -51,7 +51,18 @@
 								"exec": [
 									"pm.test(\"Status code is 201\", function () {",
 									"    pm.response.to.have.status(201);",
-									"});"
+									"});",
+									"",
+									"// Proceed with processing only if the status is 200",
+									"if (pm.response.code === 201) {",
+									"    var data = pm.response.json();",
+									"",
+									"    pm.environment.set(\"role_random_id\", data.id);",
+									"    console.log(`Environment variable 'role_random_id' set to: ${data.id}`);",
+									"",
+									"} else {",
+									"    console.error(`Unexpected response status: ${pm.response.code}`);",
+									"}"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -63,7 +74,9 @@
 								"id": "2ce844e1-532b-4103-8367-16aa8a053771",
 								"exec": [
 									"const randomInt = Math.floor(Math.random() * 98) + 1;",
-									"pm.environment.set(\"random_authority\", randomInt);"
+									"pm.environment.set(\"random_authority\", randomInt);",
+									"",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
