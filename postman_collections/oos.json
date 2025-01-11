@@ -236,7 +236,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"nickname\": \"{{$randomUserName}}\",\n    \"email\": \"{{$randomEmail}}\",\n    \"password\": \"{{rand_password}}\",\n    \"role_id\": \"9c6d4dec-896a-4e2b-ba22-5b069706061b\"\n}",
+							"raw": "{\n    \"nickname\": \"{{$randomUserName}}\",\n    \"email\": \"{{$randomEmail}}\",\n    \"password\": \"{{rand_password}}\",\n    \"role_id\": \"968954a6-9965-494f-b8a7-72e96ab74e02\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
