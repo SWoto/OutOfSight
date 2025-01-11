@@ -108,6 +108,32 @@
 					"response": []
 				},
 				{
+					"name": "Get All Roles /role",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "b5eebe3f-6df0-4cd9-9fe4-425d0e032a1e",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/role",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				},
+				{
 					"name": "Update Role by id /role/<id>",
 					"event": [
 						{
