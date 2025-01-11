@@ -200,7 +200,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"{{$randomAdjective}}\",\n    \"authority\": \"55\"\n}",
+							"raw": "{\n    \"name\": \"{{$randomAdjective}}\",\n    \"authority\": {{random_authority}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
