@@ -11,6 +11,7 @@ from sqlalchemy import text
 from typing import AsyncGenerator
 
 from app.core.configs import settings
+from app.models.roles import RolesModel
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,24 @@ async def create_database(base_url: str, database_name: str) -> bool:
         logger.info(f"Database '{database_name}' already exists")
 
     return False
+
+async def initialize_default_values() -> None:
+    logger.info("Initializing default values in the database")
+    async with Session() as session:
+        items_to_commit = 0
+        if not await RolesModel.find_by_authority(settings.MIN_ROLE, session):
+            logger.debug("Did not find default role, creating it")
+            role_min = RolesModel(authority=settings.MIN_ROLE, name="Default")
+            session.add(role_min)
+            items_to_commit+=1
+        if not await RolesModel.find_by_authority(settings.MIN_ROLE, session):
+            logger.debug("Did not find superuser role, creating it")
+            role_max = RolesModel(authority=settings.MAX_ROLE, name="SuperUser")
+            session.add(role_max)
+            items_to_commit+=1
+        
+        if items_to_commit > 0:
+            await session.commit()
 
 
 async def create_tables() -> None:

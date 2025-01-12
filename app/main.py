@@ -9,7 +9,7 @@ from asgi_correlation_id import CorrelationIdMiddleware
 from app.core.configs import settings, DevConfig, TestConfig
 from app.core.logging import configure_logging
 from app.api.v1.api import api_router
-from app.core.database import create_tables, create_database
+from app.core.database import create_tables, create_database, initialize_default_values
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ async def lifespan(app: FastAPI, settings=settings):
         if isinstance(settings, TestConfig) or isinstance(settings, DevConfig):
             await create_database(settings.DATABASE_URL, settings.POSTGRES_DB)
             await create_tables()
+            await initialize_default_values()
         yield
     except Exception as e:
         logger.error(f"Error during application startup: {e}")

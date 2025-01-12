@@ -60,10 +60,6 @@ ValidatePassword = Annotated[SecretStr,
                              AfterValidator(ValidatedSecretStr.validate)]
 
 
-class UserPassword(BaseModel):
-    password: ValidatePassword
-
-
 class PlainUserSchema(BaseModel):
     nickname: str
     email: EmailStr
@@ -73,7 +69,7 @@ class PlainUserSchema(BaseModel):
         return value.title()
 
 
-class PostPutUserSchema(UserPassword, PlainUserSchema):
+class PostPutUserSchema(PlainUserSchema):
     password: ValidatePassword
 
 

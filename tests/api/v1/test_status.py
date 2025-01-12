@@ -2,12 +2,16 @@ import pytest
 from httpx import AsyncClient
 from datetime import datetime
 
+from app.core.configs import settings
+
 
 class TestStatus():
 
+    API_STATUS_ENDPOINT = f"{settings.API_V1_STR}/status/"
+
     @pytest.mark.anyio
     async def test_get_status(self, async_client: AsyncClient):
-        response = await async_client.get(f"api/v1/status/")
+        response = await async_client.get(self.API_STATUS_ENDPOINT)
         assert response.status_code == 200
 
         data = response.json()

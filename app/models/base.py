@@ -2,6 +2,7 @@ import uuid
 from sqlalchemy import Column, DateTime, func, select, UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
+from typing import Self
 
 from app.core.configs import settings
 
@@ -40,7 +41,7 @@ class BaseModel(settings.DBBaseModel):
                 f"Failed to delete {self.__class__.__name__} to the database.") from e
 
     @classmethod
-    async def find_by_id(cls, id: UUID, db: AsyncSession):
+    async def find_by_id(cls, id: UUID, db: AsyncSession) -> Self | None:
         query = select(cls).filter_by(id=id)
         result = await db.execute(query)
         return result.scalars().unique().one_or_none()

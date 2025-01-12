@@ -8,7 +8,7 @@ import os
 os.environ["ENV_STATE"] = "test"
 
 from app.models.users import UsersModel
-from app.core.database import engine, create_database, create_tables, drop_tables, Session
+from app.core.database import engine, create_database, create_tables, drop_tables, Session, initialize_default_values
 from app.main import app
 from app.core.configs import settings
 
@@ -37,6 +37,7 @@ async def session() -> AsyncGenerator:
 async def initiate_db() -> AsyncGenerator:
     await create_database(settings.DATABASE_URL, settings.POSTGRES_DB)
     await create_tables()
+    await initialize_default_values()
     yield 
     await drop_tables()
 

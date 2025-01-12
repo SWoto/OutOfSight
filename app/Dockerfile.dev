@@ -1,8 +1,5 @@
 FROM python:3.11.7
 
-# upgrade pip
-RUN pip install --upgrade pip
-
 # get curl for healthchecks
 RUN apt install curl
 
@@ -19,6 +16,7 @@ ENV VIRTUAL_ENV=/home/pre-oos/venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install -r requirements.txt
+RUN pip install --upgrade pip
 
 # random task to block container termination
 CMD ["tail", "-f", "/dev/null"]

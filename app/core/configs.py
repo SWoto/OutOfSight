@@ -9,6 +9,9 @@ class BaseConfig(BaseSettings):
     ENV_STATE: Optional[str] = None
     ALGORITHM: str = "HS256"
 
+    MIN_ROLE: int = 0
+    MAX_ROLE: int = 99
+
     """Loads the dotenv file. Including this is necessary to get
     pydantic to load a .env file."""
     model_config = SettingsConfigDict(

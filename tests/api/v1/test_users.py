@@ -13,15 +13,21 @@ class TestUsers(BaseUser):
         response = await self.register_user(async_client, self.data)
         assert response.status_code == 201
 
-        id = response.json()["id"]
+        user_data = response.json()
+        id = user_data["id"]
+        assert user_data["email"] == self.data["email"]
+        assert user_data["nickname"] == self.data["nickname"]
+        assert user_data["confirmed"] == self.data["confirmed"]
+        assert user_data["role"]["name"] == "Default"
+
         # Read
-        response = await async_client.get(f"/api/v1/user/{id}")
+        response = await async_client.get(f"{self.API_USER_ENDPOINT}{id}")
         assert response.status_code == 200
 
         user_data = response.json()
         assert user_data["email"] == self.data["email"]
         assert user_data["nickname"] == self.data["nickname"]
-        assert user_data["id"] == str(id)
+        assert user_data["id"] == id
 
         # Update (PUT)
         updated_data = {
@@ -30,12 +36,20 @@ class TestUsers(BaseUser):
             "password": "N3wSup3rDup3rPassword#1"
         }
 
-        response = await async_client.put(f"/api/v1/user/{id}", json=updated_data)
+        response = await async_client.put(f"{self.API_USER_ENDPOINT}{id}", json=updated_data)
         assert response.status_code == 202
 
         user_data = response.json()
         assert user_data["email"] == updated_data["email"]
         assert user_data["nickname"] == updated_data["nickname"]
+        assert user_data["id"] == id
+
+        # Delete
+        response = await async_client.delete(f"{self.API_USER_ENDPOINT}{id}")
+        assert response.status_code == 204
+
+        response = await async_client.get(f"{self.API_USER_ENDPOINT}{id}")
+        assert response.status_code == 404
 
     @pytest.mark.anyio
     async def test_register_user_already_registered(self, registered_user, async_client: AsyncClient):
@@ -96,19 +110,19 @@ class TestUsers(BaseUser):
     @pytest.mark.anyio
     async def test_get_user_by_id_invalid_id(self, async_client: AsyncClient):
         fake_id = "0"
-        response = await async_client.get(f"/api/v1/user/{fake_id}")
+        response = await async_client.get(f"{self.API_USER_ENDPOINT}{fake_id}")
         assert response.status_code == 422
 
     @pytest.mark.anyio
     async def test_get_user_by_id_wrong_id(self, async_client: AsyncClient):
         fake_id = "00000000-0000-0000-0000-000000000000"
-        response = await async_client.get(f"/api/v1/user/{fake_id}")
+        response = await async_client.get(f"{self.API_USER_ENDPOINT}{fake_id}")
         assert response.status_code == 404
 
     @pytest.mark.anyio
     async def test_get_user_by_token(self, logged_in_token, async_client: AsyncClient):
         headers = {"Authorization": f"Bearer {logged_in_token}"}
-        response = await async_client.get("/api/v1/user/", headers=headers)
+        response = await async_client.get(f"{self.API_USER_ENDPOINT}", headers=headers)
         assert response.status_code == 200
 
         user_data = response.json()
@@ -118,7 +132,7 @@ class TestUsers(BaseUser):
     @pytest.mark.anyio
     async def test_get_user_by_token_invalid_token(self, async_client: AsyncClient):
         headers = {"Authorization": "Some rubish"}
-        response = await async_client.get("/api/v1/user/", headers=headers)
+        response = await async_client.get(f"{self.API_USER_ENDPOINT}", headers=headers)
         assert response.status_code == 401
 
     @pytest.mark.anyio
@@ -130,7 +144,7 @@ class TestUsers(BaseUser):
             "password": "N3wSup3rDup3rPassword#1"
         }
 
-        response = await async_client.put(f"/api/v1/user/{fake_id}", json=updated_data)
+        response = await async_client.put(f"{self.API_USER_ENDPOINT}{fake_id}", json=updated_data)
         assert response.status_code == 404
 
     @pytest.mark.anyio
@@ -143,7 +157,7 @@ class TestUsers(BaseUser):
             "password": "N3wSup3rDup3rPassword#1"
         }
 
-        response = await async_client.put(f"/api/v1/user/{fake_id}", json=updated_data, headers=headers)
+        response = await async_client.put(f"{self.API_USER_ENDPOINT}{fake_id}", json=updated_data, headers=headers)
         assert response.status_code == 422
 
     @pytest.mark.anyio
@@ -154,7 +168,7 @@ class TestUsers(BaseUser):
             "password": "N3wSup3rDup3rPassword#1"
         }
 
-        response = await async_client.put(f"/api/v1/user/{registered_user.id}", json=updated_data)
+        response = await async_client.put(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=updated_data)
         assert response.status_code == 422
 
     @pytest.mark.anyio
@@ -165,7 +179,7 @@ class TestUsers(BaseUser):
             "password": "1234"
         }
 
-        response = await async_client.put(f"/api/v1/user/{registered_user.id}", json=updated_data)
+        response = await async_client.put(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=updated_data)
         assert response.status_code == 422
 
     @pytest.mark.anyio
@@ -179,14 +193,14 @@ class TestUsers(BaseUser):
         for key in updated_data:
             new_data = updated_data.copy()
             new_data.pop(key)
-            response = await async_client.put(f"/api/v1/user/{registered_user.id}", json=new_data)
+            response = await async_client.put(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=new_data)
             assert response.status_code == 422
 
     @pytest.mark.anyio
     async def test_patch_user_nickname(self, registered_user, async_client: AsyncClient):
         patch_data = {"nickname": "Patched Nickname"}
 
-        response = await async_client.patch(f"/api/v1/user/{registered_user.id}", json=patch_data)
+        response = await async_client.patch(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=patch_data)
         assert response.status_code == 202
 
         user_data = response.json()
@@ -194,16 +208,16 @@ class TestUsers(BaseUser):
 
     @pytest.mark.anyio
     async def test_patch_user_invalid_nickname(self, registered_user, async_client: AsyncClient):
-        patch_data = {"nickname": ""} 
+        patch_data = {"nickname": ""}
 
-        response = await async_client.patch(f"/api/v1/user/{registered_user.id}", json=patch_data)
+        response = await async_client.patch(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=patch_data)
         assert response.status_code == 422
 
     @pytest.mark.anyio
     async def test_patch_user_password(self, registered_user, async_client: AsyncClient):
         patch_data = {"password": "SecurePass#123"}
 
-        response = await async_client.patch(f"/api/v1/user/{registered_user.id}", json=patch_data)
+        response = await async_client.patch(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=patch_data)
         assert response.status_code == 202
 
         user_data = response.json()
@@ -216,14 +230,14 @@ class TestUsers(BaseUser):
 
         for pwd in invalid_passwords:
             patch_data = {"password": pwd}
-            response = await async_client.patch(f"/api/v1/user/{registered_user.id}", json=patch_data)
+            response = await async_client.patch(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=patch_data)
             assert response.status_code == 422
 
     @pytest.mark.anyio
     async def test_patch_user_email(self, registered_user, async_client: AsyncClient):
         patch_data = {"email": "updated@laland.pl"}
 
-        response = await async_client.patch(f"/api/v1/user/{registered_user.id}", json=patch_data)
+        response = await async_client.patch(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=patch_data)
         assert response.status_code == 202
 
         user_data = response.json()
@@ -236,24 +250,22 @@ class TestUsers(BaseUser):
 
         for email in invalid_emails:
             patch_data = {"email": email}
-            response = await async_client.patch(f"/api/v1/user/{registered_user.id}", json=patch_data)
+            response = await async_client.patch(f"{self.API_USER_ENDPOINT}{registered_user['id']}", json=patch_data)
             assert response.status_code == 422
-
 
     @pytest.mark.anyio
     async def test_delete_user_by_id(self, registered_user, async_client: AsyncClient):
-        response = await async_client.delete(f"/api/v1/user/{registered_user.id}")
+        response = await async_client.delete(f"{self.API_USER_ENDPOINT}{registered_user['id']}")
         assert response.status_code == 204
 
-        response = await async_client.get(f"/api/v1/user/{registered_user.id}")
+        response = await async_client.get(f"{self.API_USER_ENDPOINT}{registered_user['id']}")
         assert response.status_code == 404
-
 
     @pytest.mark.anyio
     async def test_delete_user_by_token(self, confirmed_user, logged_in_token, async_client: AsyncClient):
         headers = {"Authorization": f"Bearer {logged_in_token}"}
-        response = await async_client.delete("/api/v1/user/", headers=headers)
+        response = await async_client.delete(f"{self.API_USER_ENDPOINT}", headers=headers)
         assert response.status_code == 204
 
-        response = await async_client.get(f"/api/v1/user/{confirmed_user.id}")
+        response = await async_client.get(f"{self.API_USER_ENDPOINT}{confirmed_user['id']}")
         assert response.status_code == 404
