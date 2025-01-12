@@ -39,6 +39,216 @@
 			"id": "da612254-c23e-4652-8a94-72ef02e9d38d"
 		},
 		{
+			"name": "Role",
+			"item": [
+				{
+					"name": "Create Role /role",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Proceed with processing only if the status is 200",
+									"if (pm.response.code === 201) {",
+									"    var data = pm.response.json();",
+									"",
+									"    pm.environment.set(\"role_random_id\", data.id);",
+									"    console.log(`Environment variable 'role_random_id' set to: ${data.id}`);",
+									"",
+									"} else {",
+									"    console.error(`Unexpected response status: ${pm.response.code}`);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "2ce844e1-532b-4103-8367-16aa8a053771",
+								"exec": [
+									"const randomInt = Math.floor(Math.random() * 98) + 1;",
+									"pm.environment.set(\"random_authority\", randomInt);",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "cd207f61-13b8-4b01-8aab-0742c71aae67",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"authority\": {{random_authority}},\n    \"name\": \"{{$randomAdjective}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/role",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Role by id /role/<id>",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "4f9da220-48a3-4d10-ae04-befe636b12c3",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/role/{{role_random_id}}",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Roles /role",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Proceed with processing only if the status is 200",
+									"if (pm.response.code === 200) {",
+									"    const roles = pm.response.json();",
+									"",
+									"    const roleWithAuthorityMin = roles.find(role => role.authority === 0);",
+									"    const roleWithAuthorityMax = roles.find(role => role.authority === 99);",
+									"",
+									"    if (roleWithAuthorityMin) {",
+									"        pm.environment.set(\"role_default_id\", roleWithAuthorityMin.id);",
+									"        console.log(`Environment variable 'role_default_id' set to: ${roleWithAuthorityMin.id}`);",
+									"    } else {",
+									"        console.error(\"No role found with authority 0\");",
+									"    }",
+									"",
+									"    if (roleWithAuthorityMax) {",
+									"        pm.environment.set(\"role_superuser_id\", roleWithAuthorityMax.id);",
+									"        console.log(`Environment variable 'role_superuser_id' set to: ${roleWithAuthorityMax.id}`);",
+									"    } else {",
+									"        console.error(\"No role found with authority 0\");",
+									"    }",
+									"} else {",
+									"    console.error(`Unexpected response status: ${pm.response.code}`);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "b5eebe3f-6df0-4cd9-9fe4-425d0e032a1e",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/role",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role by id /role/<id>",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "cf03b589-96a9-44f1-ade5-166950f3b8d3",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "da3cfa35-ed4b-4b26-a8a9-11db2406782b",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{$randomAdjective}}\",\n    \"authority\": {{random_authority}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/role/{{role_random_id}}",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Role /role/<id>",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "b2630c92-5281-465f-9f9c-e5916706e8ce",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/role/{{role_random_id}}",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				}
+			],
+			"id": "96c023bc-fe92-466d-804b-d6e222858838"
+		},
+		{
 			"name": "User",
 			"item": [
 				{
@@ -154,8 +364,8 @@
 							"script": {
 								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
 									"});",
 									"",
 									"var data = pm.response.json();",
@@ -252,6 +462,66 @@
 						"method": "GET",
 						"header": [],
 						"url": "{{url}}:{{port}}{{API_STR}}/user/",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User from Token /user/",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "8f8f5445-051a-490d-ac50-f47d338fa4bc",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/user/",
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User /user/",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "4d69278c-2b24-41b3-ada4-c7379ccd370e",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/user/{{id}}",
 						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
 					},
 					"response": []
