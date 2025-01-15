@@ -63,7 +63,7 @@ class TestRoles(BaseRole):
         assert response.status_code == 404
 
     @pytest.mark.anyio
-    async def test_create_role_ivalid_authority(self, async_client: AsyncClient):
+    async def test_create_role_invalid_authority(self, async_client: AsyncClient):
         rand_float = random.random()*10
         int_below_range = int(settings.MIN_ROLE-10)
         int_above_range = int(settings.MAX_ROLE+10)
