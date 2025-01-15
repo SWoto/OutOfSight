@@ -343,6 +343,12 @@
 					],
 					"id": "2d051bc2-dc60-471c-81fe-95be2f81f664",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{admin_access_token}}"
+							}
+						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -448,7 +454,7 @@
 								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
 								"exec": [
 									"var data = pm.response.json();",
-									"pm.environment.set(\"access_token\", data.access_token);"
+									"pm.environment.set(\"admin_access_token\", data.access_token);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -464,12 +470,12 @@
 							"formdata": [
 								{
 									"key": "username",
-									"value": "{{email}}",
+									"value": "{{admin_email}}",
 									"type": "text"
 								},
 								{
 									"key": "password",
-									"value": "{{rand_password}}",
+									"value": "{{admin_password}}",
 									"description": "}}",
 									"type": "text"
 								}
