@@ -34,7 +34,6 @@ async def post_user(user: PostPutUserSchema, request: Request, background_tasks:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Provided role id does not exist")
 
-
     db.add(new_user)
     await db.commit()
 
@@ -108,36 +107,37 @@ async def get_user_by_token(current_user: Annotated[UsersModel, Depends(get_curr
 
 
 # TODO: Add administrator access to this
-@router.put('/{id}', status_code=status.HTTP_202_ACCEPTED, response_model=ReturnUserSchema, tags=["Users"], summary="Update all user data", description="Get exing user and replace all of its data from provided information")
+@router.put('/{id}', status_code=status.HTTP_202_ACCEPTED, response_model=ReturnUserSchema, tags=["Users"], summary="Update all user data", description="Get existing user and replace all of its data from provided information")
 async def put_user(id: UUID, user: PostPutUserSchema, db: Annotated[AsyncSession, Depends(get_db_session)]):
     # Given that PostPutUserSchema is more restrictive then patch, first pass through PostPutUserSchema then sends to PatchUserSchema.
     return await patch_user(id, user, db)
 
 
 # TODO: Add administrator access to this
-@router.patch('/{id}', status_code=status.HTTP_202_ACCEPTED, response_model=ReturnUserSchema, tags=["Users"], summary="Patch user data", description="Get exing user and replace with the provided information")
+@router.patch('/{id}', status_code=status.HTTP_202_ACCEPTED, response_model=ReturnUserSchema, tags=["Users"], summary="Patch user data", description="Get existing user and replace with the provided information")
 async def patch_user(id: UUID, user: PatchUserSchema, db: Annotated[AsyncSession, Depends(get_db_session)]):
     requested_user = await get_user_by_id(id, db)
-        
+
     new_data = user.model_dump()
     for key in new_data:
         if new_data[key] and new_data[key] != "":
             if key == 'password':
                 new_data[key] = get_hashed_password(new_data[key])
             setattr(requested_user, key, new_data[key])
-    
+
     await db.commit()
 
     return await UsersModel.find_by_id(id, db)
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Users"], summary="Delete user", description="Get exing user from ID and deletes it")
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Users"], summary="Delete user", description="Get existing user from ID and deletes it")
 async def delete_user_by_id(id: UUID, db: Annotated[AsyncSession, Depends(get_db_session)]):
     requested_user = await get_user_by_id(id, db)
-    
+
     await delete_user_by_token(requested_user, db)
 
-    
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT, tags=["Users"], summary="Delete user", description="Get exing user from ID and deletes it")
+
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT, tags=["Users"], summary="Delete user", description="Get existing user from ID and deletes it")
 async def delete_user_by_token(current_user: Annotated[UsersModel, Depends(get_current_user)], db: Annotated[AsyncSession, Depends(get_db_session)]):
     requested_user = await UsersModel.find_by_id(current_user.id, db)
     await requested_user.delete_from_db(db)
