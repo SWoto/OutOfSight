@@ -20,6 +20,6 @@ class BaseRole():
 
     @classmethod
     @pytest.fixture
-    async def registed_role(cls, async_client: AsyncClient) -> dict:
+    async def registered_role(cls, async_client: AsyncClient) -> dict:
         response = await cls.register_role(async_client, cls.data)
         return response.json()
