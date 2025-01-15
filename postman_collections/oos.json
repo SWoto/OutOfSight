@@ -329,9 +329,12 @@
 									"    pm.response.to.have.status(202);",
 									"});",
 									"",
-									"var data = pm.response.json();",
+									"if (pm.response.code === 202) {",
+									"    var data = pm.response.json();",
 									"",
-									"pm.environment.set(\"email\", data.email);"
+									"    pm.environment.set(\"email\", data.email);",
+									"}",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
