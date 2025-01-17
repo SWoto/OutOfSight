@@ -255,7 +255,7 @@
 					"name": "Admin",
 					"item": [
 						{
-							"name": "Login User /user/login",
+							"name": "Login Admin User /user/login",
 							"event": [
 								{
 									"listen": "test",
