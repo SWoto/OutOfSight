@@ -44,11 +44,15 @@ async def initiate_db() -> AsyncGenerator:
     await drop_tables()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="function")
 async def clear_db() -> AsyncGenerator:
     yield
     async with Session() as session:
-        await session.execute(delete(UsersModel))
+        await session.execute(
+            delete(UsersModel).where(
+                UsersModel.email != settings.ADMIN_DEFAULT_EMAIL
+            )
+        )
 
         await session.execute(
             delete(RolesModel).where(

@@ -2,8 +2,11 @@ import bcrypt
 from pydantic import SecretStr
 
 
-def get_hashed_password(password: SecretStr) -> bytes:
-    pwd = password.get_secret_value()
+def get_hashed_password(password: SecretStr | str) -> bytes:
+    if isinstance(password, SecretStr):
+        pwd = password.get_secret_value()
+    else:
+        pwd = password
     pwd_bytes = pwd.encode('utf-8')
     hashed_password = bcrypt.hashpw(password=pwd_bytes, salt=bcrypt.gensalt())
     return hashed_password

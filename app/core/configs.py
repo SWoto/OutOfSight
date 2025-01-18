@@ -25,6 +25,9 @@ class GlobalConfig(BaseConfig):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60*24*1  # 1 day
     CONFIRMATION_TOKEN_EXPIRE_MINUTES: int = 30  # 30 minutes
 
+    ADMIN_DEFAULT_PASSWORD: Optional[str] = None
+    ADMIN_DEFAULT_EMAIL: Optional[str] = None
+
     SQLALCHEMY_ECHO: Optional[bool] = False
 
     DATABASE_URL: Optional[str] = None

@@ -96,4 +96,4 @@ class PatchUserSchema(BaseModel):
 
 class LoginUserSchema(BaseModel):
     email: EmailStr
-    password: ValidatePassword
+    password: str

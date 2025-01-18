@@ -140,3 +140,26 @@ async def blacklist_token(payload: Annotated[dict, Depends(validate_token)]):
     experis_on = timedelta(minutes=settings.CONFIRMATION_TOKEN_EXPIRE_MINUTES) if token_type == "confirmation_token" else timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     jwt_redis_blocklist.set(jti, "blacklisted", ex=experis_on)
+
+
+class RoleChecker:
+    def __init__(self, min_allowed_role: int, allow_self: bool = False) -> None:
+        self.min_allowed_role = min_allowed_role
+        self.allow_self = allow_self
+
+    # ID Received from the method query string
+    def __call__(self, user: Annotated[UsersModel, Depends(get_current_user)], id: Optional[uuid.UUID] = None) -> None:
+        is_self = id and user.id and user.id == id
+        attends_min_role = user.role.authority > self.min_allowed_role
+
+        if not (self.allow_self and is_self) and not attends_min_role:
+            logger.debug(
+                f"Access denied for user {user.id} with role authority {user.role.authority}. "
+                f"min_allowed_role: {self.min_allowed_role}, allow_self: {self.allow_self}, "
+                f"requested_id: {id}, user_id: {user.id}"
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions"
+            )

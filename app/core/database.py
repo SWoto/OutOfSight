@@ -11,7 +11,7 @@ from sqlalchemy import text
 from typing import AsyncGenerator
 
 from app.core.configs import settings
-from app.models.roles import RolesModel
+from app.models import RolesModel, UsersModel
 
 logger = logging.getLogger(__name__)
 
@@ -78,22 +78,30 @@ async def create_database(base_url: str, database_name: str) -> bool:
 
     return False
 
+
 async def initialize_default_values() -> None:
     logger.info("Initializing default values in the database")
     async with Session() as session:
-        items_to_commit = 0
         if not await RolesModel.find_by_authority(settings.MIN_ROLE, session):
             logger.debug("Did not find default role, creating it")
             role_min = RolesModel(authority=settings.MIN_ROLE, name="Default")
             session.add(role_min)
-            items_to_commit+=1
-        if not await RolesModel.find_by_authority(settings.MIN_ROLE, session):
+            await session.commit()
+
+        if not await RolesModel.find_by_authority(settings.MAX_ROLE, session):
             logger.debug("Did not find superuser role, creating it")
-            role_max = RolesModel(authority=settings.MAX_ROLE, name="SuperUser")
+            role_max = RolesModel(
+                authority=settings.MAX_ROLE, name="SuperUser")
             session.add(role_max)
-            items_to_commit+=1
-        
-        if items_to_commit > 0:
+            await session.commit()
+
+        if not await UsersModel.find_by_email(settings.ADMIN_DEFAULT_EMAIL, session):
+            logger.debug("Did not find admin user, creating it")
+            role_admin = await RolesModel.find_by_authority(
+                settings.MAX_ROLE, session)
+            admin = UsersModel(nickname="SWoto", email=settings.ADMIN_DEFAULT_EMAIL,
+                               password=settings.ADMIN_DEFAULT_PASSWORD, role_id=role_admin.id, confirmed=True)
+            session.add(admin)
             await session.commit()
 
 

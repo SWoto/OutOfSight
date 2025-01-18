@@ -55,12 +55,13 @@ class TestRoles(BaseRole):
         assert response.status_code == 409
 
     @pytest.mark.anyio
-    async def test_get_role_wrong_id(self, async_client: AsyncClient):
-        response = await async_client.get(f"{self.API_ROLE_ENDPOINT}01234")
-        assert response.status_code == 422
-
-        response = await async_client.get(f"{self.API_ROLE_ENDPOINT}00000000-0000-0000-0000-000000000000")
-        assert response.status_code == 404
+    @pytest.mark.parametrize("id, status_code", [
+        ("00000000-0000-0000-0000-000000000000", 404),
+        ("12345", 422)
+    ])
+    async def test_get_role_wrong_id(self, id, status_code, async_client: AsyncClient):
+        response = await async_client.get(f"{self.API_ROLE_ENDPOINT}{id}")
+        assert response.status_code == status_code
 
     @pytest.mark.anyio
     async def test_create_role_invalid_authority(self, async_client: AsyncClient):
@@ -84,19 +85,10 @@ class TestRoles(BaseRole):
         assert response.status_code == 422
 
     @pytest.mark.anyio
-    async def test_delete_id_issues(self, async_client: AsyncClient):
-        tests = {
-            "wrong": {
-                "id": "00000000-0000-0000-0000-000000000000",
-                "status_code": 404
-            },
-            "invalid": {
-                "id": "12345",
-                "status_code": 422
-            }
-        }
-
-        for key in tests:
-            test = tests[key]
-            response = await async_client.delete(f"{self.API_ROLE_ENDPOINT}{test['id']}")
-            assert response.status_code == test["status_code"]
+    @pytest.mark.parametrize("id, status_code", [
+        ("00000000-0000-0000-0000-000000000000", 404),
+        ("12345", 422)
+    ])
+    async def test_delete_id_issues(self, id, status_code, async_client: AsyncClient):
+        response = await async_client.delete(f"{self.API_ROLE_ENDPOINT}{id}")
+        assert response.status_code == status_code

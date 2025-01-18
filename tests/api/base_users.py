@@ -58,6 +58,13 @@ class BaseUser():
         response = await cls.login_user(async_client, cls.data["email"], cls.data["password"])
 
         return response.json()["access_token"]
+    
+    @classmethod
+    @pytest.fixture
+    async def logged_in_admin_token(cls, async_client: AsyncClient) -> str:
+        response = await cls.login_user(async_client, settings.ADMIN_DEFAULT_EMAIL, settings.ADMIN_DEFAULT_PASSWORD)
+
+        return response.json()["access_token"]
 
     @pytest.fixture(autouse=True)
     def reset_state(self) -> None:
