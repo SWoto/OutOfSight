@@ -252,7 +252,102 @@
 			"name": "User",
 			"item": [
 				{
-					"name": "Create User /user/signup",
+					"name": "Admin",
+					"item": [
+						{
+							"name": "Login Admin User /user/login",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+										"exec": [
+											"var data = pm.response.json();",
+											"pm.environment.set(\"admin_access_token\", data.access_token);"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"id": "c4871e62-40a4-4d01-912d-ad2790fc2c50",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "username",
+											"value": "{{admin_email}}",
+											"type": "text"
+										},
+										{
+											"key": "password",
+											"value": "{{admin_password}}",
+											"description": "}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": "{{url}}:{{port}}{{API_STR}}/user/login",
+								"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+							},
+							"response": []
+						},
+						{
+							"name": "Update User by id /user/<id> Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "cf03b589-96a9-44f1-ade5-166950f3b8d3",
+										"exec": [
+											"pm.test(\"Status code is 202\", function () {",
+											"    pm.response.to.have.status(202);",
+											"});",
+											"",
+											"if (pm.response.code === 202) {",
+											"    var data = pm.response.json();",
+											"",
+											"    pm.environment.set(\"email\", data.email);",
+											"}",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"id": "2c40a5f1-9836-4cc7-b15d-7efc562cf000",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": {
+										"token": "{{admin_access_token}}"
+									}
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nickname\": \"{{$randomUserName}}\",\n    \"email\": \"{{$randomEmail}}\",\n    \"password\": \"{{rand_password}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": "{{url}}:{{port}}{{API_STR}}/user/{{id}}",
+								"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+							},
+							"response": []
+						}
+					],
+					"id": "e8d65cc8-402a-4874-86c2-b37e4eeb4935"
+				},
+				{
+					"name": "Create User /user/signup Copy",
 					"event": [
 						{
 							"listen": "test",
@@ -273,7 +368,7 @@
 							}
 						}
 					],
-					"id": "2d439020-26c5-4147-9d71-53ba8acfbb17",
+					"id": "76346d81-1b62-48ad-86a8-b684a00f7375",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -329,9 +424,12 @@
 									"    pm.response.to.have.status(202);",
 									"});",
 									"",
-									"var data = pm.response.json();",
+									"if (pm.response.code === 202) {",
+									"    var data = pm.response.json();",
 									"",
-									"pm.environment.set(\"email\", data.email);"
+									"    pm.environment.set(\"email\", data.email);",
+									"}",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -340,6 +438,12 @@
 					],
 					"id": "2d051bc2-dc60-471c-81fe-95be2f81f664",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
 						"method": "PUT",
 						"header": [],
 						"body": {
