@@ -643,8 +643,19 @@
 						"disableBodyPruning": true
 					},
 					"request": {
-						"method": "GET",
-						"header": []
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1ef5067e-d88b-4df0-bfc0-ac8dbee1f3c9"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
 					},
 					"response": []
 				}
