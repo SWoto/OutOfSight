@@ -632,6 +632,24 @@
 				}
 			],
 			"id": "bc1a5f15-39ef-4ea2-a68d-6bab0f377cb4"
+		},
+		{
+			"name": "File",
+			"item": [
+				{
+					"name": "New Request",
+					"id": "1569bed1-2ac9-4177-aaff-b93678eef95b",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			],
+			"id": "51591937-330c-4df3-bcc0-2354bd9f7274"
 		}
 	],
 	"event": [
