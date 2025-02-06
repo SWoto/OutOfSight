@@ -637,12 +637,18 @@
 			"name": "File",
 			"item": [
 				{
-					"name": "New Request",
+					"name": "/file Upload File",
 					"id": "1569bed1-2ac9-4177-aaff-b93678eef95b",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
