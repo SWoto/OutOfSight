@@ -683,6 +683,64 @@
 						"url": "{{url}}:{{port}}{{API_STR}}/file/"
 					},
 					"response": []
+				},
+				{
+					"name": "/file Upload File (png)",
+					"id": "b0ecb9a5-1d88-446f-a94c-2de9f6f3d53f",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1ef5067e-d88b-4df0-bfc0-ac8dbee1f3c9"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				},
+				{
+					"name": "/file Upload File (pdf)",
+					"id": "595e6571-91bf-4781-89d8-9759a17d8968",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1ef5067e-d88b-4df0-bfc0-ac8dbee1f3c9"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
 				}
 			],
 			"id": "51591937-330c-4df3-bcc0-2354bd9f7274"
