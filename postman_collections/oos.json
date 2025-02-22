@@ -405,6 +405,12 @@
 					],
 					"id": "24da87a6-eeee-4001-83e0-41df3154f09b",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
 						"method": "GET",
 						"header": [],
 						"url": "{{url}}:{{port}}{{API_STR}}/user/{{id}}",
@@ -505,10 +511,28 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"id": "f9c8a601-d9a4-41e5-8d9c-36d27502a7dd",
 								"exec": [
+									"// Check if the response status code is 200",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
 									"var data = pm.response.json();",
-									"pm.environment.set(\"access_token\", data.access_token);"
+									"",
+									"// Verify that the access_token exists in the response",
+									"pm.test(\"Response contains access_token\", function () {",
+									"    pm.expect(data).to.have.property(\"access_token\");",
+									"});",
+									"",
+									"// Set the access_token as an environment variable if it exists",
+									"if (data.access_token) {",
+									"    pm.environment.set(\"access_token\", data.access_token);",
+									"    console.log(`Access token set to environment: ${data.access_token}`);",
+									"} else {",
+									"    console.error(\"Access token is missing in the response.\");",
+									"}"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -530,7 +554,6 @@
 								{
 									"key": "password",
 									"value": "{{rand_password}}",
-									"description": "}}",
 									"type": "text"
 								}
 							]
@@ -707,6 +730,11 @@
 									"key": "file",
 									"type": "file",
 									"src": "postman-cloud:///1ef5067e-d88b-4df0-bfc0-ac8dbee1f3c9"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text"
 								}
 							]
 						},
@@ -736,6 +764,12 @@
 									"key": "file",
 									"type": "file",
 									"src": "postman-cloud:///1ef5067e-d88b-4df0-bfc0-ac8dbee1f3c9"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text",
+									"uuid": "14c578c3-2c7a-46b4-aa30-0a10fbfe6026"
 								}
 							]
 						},
@@ -798,7 +832,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "postman-cloud:///1efef8e7-c123-4fe0-91cc-8806f3862544"
+									"src": "postman-cloud:///1eff12c3-521b-4030-9944-8a3046a36a1d"
 								},
 								{
 									"key": "encryption_key",
