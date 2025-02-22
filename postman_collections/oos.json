@@ -746,6 +746,40 @@
 						"url": "{{url}}:{{port}}{{API_STR}}/file/"
 					},
 					"response": []
+				},
+				{
+					"name": "/file Upload File (word)",
+					"id": "ce6ae1d9-85ec-4cbb-a3c0-5b963119987d",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1efef8e7-c123-4fe0-91cc-8806f3862544"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
 				}
 			],
 			"id": "51591937-330c-4df3-bcc0-2354bd9f7274"
