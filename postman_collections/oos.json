@@ -656,6 +656,25 @@
 					"response": []
 				},
 				{
+					"name": "/file Get All User Files Copy",
+					"id": "df70d3cd-b8e9-498e-b546-8a064a59754b",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				},
+				{
 					"name": "/file Upload File (jpeg)",
 					"id": "66fb25c4-4d13-4406-8ac0-da4d7ddc8896",
 					"protocolProfileBehavior": {
