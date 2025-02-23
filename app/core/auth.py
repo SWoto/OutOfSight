@@ -22,10 +22,11 @@ class Token(BaseModel):
     token_type: str
 
 
-# TODO: Add generic API_STR
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/users/login"
 )
+
+TokenType = Literal["access_token", "confirmation_token"]
 
 
 def create_credentials_exception(detail: str) -> HTTPException:
@@ -47,13 +48,26 @@ async def authenticate_user(email: EmailStr, password: str, db: AsyncSession) ->
 
 
 def create_token(token_type: str, life_time: timedelta, subject: str) -> str:
+    """
+    Creates a JWT token with the specified type, lifetime, and subject.
+
+    :param token_type: Type of the token (e.g., 'access_token', 'confirmation_token').
+    :param life_time: Lifetime of the token.
+    :param subject: Subject of the token (usually the user ID).
+    :return: Encoded JWT token.
+    """
     payload = {}  # More about at: https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.3
-    timezone_offset = -3.0  # America/Sao_Paulo
+    timezone_offset = settings.TIMEZONE_OFFSET  # America/Sao_Paulo
     tzinfo = timezone(timedelta(hours=timezone_offset))
     now = datetime.now(tz=tzinfo)
     expires_on = now + life_time
-    logger.debug(f"Creating {token_type} token", extra={
-                 "id": subject, "experis_on": expires_on})
+    logger.debug("Creating token",
+                 extra={
+                     "token_type": token_type,
+                     "subject": subject,
+                     "expires": expires_on
+                 }
+                 )
 
     payload['type'] = token_type
     payload['exp'] = expires_on
@@ -73,6 +87,7 @@ def create_confirmation_token(subject: str) -> str:
     return create_token('confirmation_token', timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES), subject=subject)
 
 
+# TODO: Add an MQTT handler
 async def send_user_confirmation_email(email: EmailStr, confirmation_url: HttpUrl):
     subject = "Successfully signed up to OOS - Confirm your email"
     body = (
@@ -86,28 +101,27 @@ async def send_user_confirmation_email(email: EmailStr, confirmation_url: HttpUr
     if isinstance(settings, DevConfig) or isinstance(settings, TestConfig):
         logger.debug("User confirmation email data:", extra={**payload})
 
-    # TODO: Add some MQTT handler here
     pass
 
 
-async def validate_token(token: Annotated[str, Depends(oauth2_scheme)], type: Literal["access_token", "confirmation_token"] = "access_token") -> Optional[dict]:
+async def validate_token(token: Annotated[str, Depends(oauth2_scheme)], type: TokenType = "access_token") -> Optional[dict]:
     try:
         payload = jwt.decode(token, settings.JWT_SECRET,
                              algorithms=settings.ALGORITHM)
     except ExpiredSignatureError as e:
-        logger.error(f"Token has expired", exc_info=e)
-        raise create_credentials_exception("Token has experied") from e
+        logger.error(f"Token has expired", exc_info=True)
+        raise create_credentials_exception("Token has expired") from e
     except JWTError as e:
-        logger.error(f"Invalid Token: {e}")
-        raise create_credentials_exception("Invalid Token") from e
+        logger.error(f"Invalid Token: {e}", exc_info=True)
+        raise create_credentials_exception(f"Invalid Token: {str(e)}") from e
 
     jti = payload.get("jti")
     if not jti:
         logger.info("Token with invalid 'jti' field")
         raise create_credentials_exception("Invalid Token")
 
-    jti_in_redit = jwt_redis_blocklist.get(jti)
-    if jti_in_redit is not None:
+    jti_in_redis = jwt_redis_blocklist.get(jti)
+    if jti_in_redis is not None:
         logger.info("Token with blacklisted jti")
         raise create_credentials_exception("Invalid Token")
 
@@ -137,12 +151,19 @@ async def get_current_user(payload: Annotated[dict, Depends(validate_token)], db
 async def blacklist_token(payload: Annotated[dict, Depends(validate_token)]):
     jti = payload.get("jti")
     token_type = payload.get("type")
-    experis_on = timedelta(minutes=settings.CONFIRMATION_TOKEN_EXPIRE_MINUTES) if token_type == "confirmation_token" else timedelta(
+    expires_on = timedelta(minutes=settings.CONFIRMATION_TOKEN_EXPIRE_MINUTES) if token_type == "confirmation_token" else timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    jwt_redis_blocklist.set(jti, "blacklisted", ex=experis_on)
+    jwt_redis_blocklist.set(jti, "blacklisted", ex=expires_on)
 
 
 class RoleChecker:
+    """
+    A dependency class to check if a user has the required role to access a resource.
+
+    :param min_allowed_role: The minimum role authority required.
+    :param allow_self: Whether to allow access if the user is accessing their own resource.
+    """
+
     def __init__(self, min_allowed_role: int, allow_self: bool = False) -> None:
         self.min_allowed_role = min_allowed_role
         self.allow_self = allow_self
