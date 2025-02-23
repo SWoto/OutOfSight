@@ -709,7 +709,7 @@
 					"response": []
 				},
 				{
-					"name": "/file/download/<id> Download File Copy",
+					"name": "/file/<id> Delete File",
 					"event": [
 						{
 							"listen": "test",
@@ -724,6 +724,49 @@
 						}
 					],
 					"id": "135c18a7-c38d-432e-b41b-20ab853a664e",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text",
+									"uuid": "ac71e664-8ab5-4330-aa7e-313f6f57e609"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/{{file_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "/file/<id> Get File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6c91d91e-94d4-4e8f-b37f-12b894e0759c",
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "f92150ef-e4ec-4521-9b00-b37519df71fc",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
