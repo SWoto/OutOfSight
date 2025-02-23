@@ -1,3 +1,6 @@
+# AWS Credentials
+.aws/*
+
 # Logs
 logs/*
 
