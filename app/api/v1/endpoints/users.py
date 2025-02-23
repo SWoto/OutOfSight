@@ -19,8 +19,6 @@ logger = logging.getLogger(__name__)
 
 BASE_NAME = "User"
 
-# TODO: Add base class for CRUD methods
-
 
 async def find_by_id_and_exception(Model: BaseModel, id: UUID, db: AsyncSession) -> BaseModel:
     requested_obj = await Model.find_by_id(id, db)
@@ -79,7 +77,7 @@ async def get_confirmation_email(token: str, db: Annotated[AsyncSession, Depends
 
     return {"detail": "User confirmed"}
 
-
+#TODO: Should add exception for raise InterfaceError('connection is closed') or let the server return 500??
 @router.post('/login',  tags=["Users", "Authentication"], summary="User Login", description="Authenticate a user and return an access token.")
 async def login_user(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Annotated[AsyncSession, Depends(get_db_session)]):
     user_info = {"email": form_data.username, "password": form_data.password}
@@ -91,9 +89,7 @@ async def login_user(request: Request, form_data: Annotated[OAuth2PasswordReques
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Username has to be an email and password an string.")
 
-    logger.warning(user_info)
     user = await authenticate_user(**user_info, db=db)
-    logger.warning(user)
 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
@@ -105,7 +101,6 @@ async def login_user(request: Request, form_data: Annotated[OAuth2PasswordReques
     return Token(access_token=create_access_token(subject=str(user.id)), token_type="bearer")
 
 
-# TODO: Add administrator access to this or change own
 @router.get('/{id}', status_code=status.HTTP_200_OK, response_model=ReturnUserSchema, tags=["Users", "Role Dependency"], summary="Get User by ID", description="Retrieve a user's details by their ID if the requester has enough privilege or is the resource owner")
 async def get_user_by_id(id: UUID, db: Annotated[AsyncSession, Depends(get_db_session)], role_check: Annotated[None, Depends(RoleChecker(min_allowed_role=10, allow_self=True))]):
     return await find_by_id_and_exception(UsersModel, id, db)
@@ -127,7 +122,6 @@ async def put_user(
     return await patch_user(id, user, db, role_check)
 
 
-# TODO: Add administrator access to this
 @router.patch('/{id}', status_code=status.HTTP_202_ACCEPTED, response_model=ReturnUserSchema, tags=["Users", "Role Dependency"], summary="Patch user data", description="Get existing user and replace with the provided information if the requester has enough privilege")
 async def patch_user(
     id: UUID,
