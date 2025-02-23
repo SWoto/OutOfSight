@@ -709,6 +709,36 @@
 					"response": []
 				},
 				{
+					"name": "/file/download/<id> Download File Copy",
+					"id": "135c18a7-c38d-432e-b41b-20ab853a664e",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text",
+									"uuid": "ac71e664-8ab5-4330-aa7e-313f6f57e609"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/download/3451b9fe-66b4-4aa9-a123-262a8c2d6e3e"
+					},
+					"response": []
+				},
+				{
 					"name": "/file Upload File (jpeg)",
 					"id": "66fb25c4-4d13-4406-8ac0-da4d7ddc8896",
 					"protocolProfileBehavior": {
