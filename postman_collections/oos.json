@@ -704,12 +704,25 @@
 								}
 							]
 						},
-						"url": "{{url}}:{{port}}{{API_STR}}/file/download/3451b9fe-66b4-4aa9-a123-262a8c2d6e3e"
+						"url": "{{url}}:{{port}}{{API_STR}}/file/download/{{file_id}}"
 					},
 					"response": []
 				},
 				{
 					"name": "/file/download/<id> Download File Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6c91d91e-94d4-4e8f-b37f-12b894e0759c",
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"id": "135c18a7-c38d-432e-b41b-20ab853a664e",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
@@ -721,7 +734,7 @@
 								"token": "{{access_token}}"
 							}
 						},
-						"method": "GET",
+						"method": "DELETE",
 						"header": [],
 						"body": {
 							"mode": "formdata",
@@ -734,12 +747,40 @@
 								}
 							]
 						},
-						"url": "{{url}}:{{port}}{{API_STR}}/file/download/3451b9fe-66b4-4aa9-a123-262a8c2d6e3e"
+						"url": "{{url}}:{{port}}{{API_STR}}/file/{{file_id}}"
 					},
 					"response": []
 				},
 				{
 					"name": "/file Upload File (jpeg)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e5581089-0151-472f-b16a-e7d1da37283a",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"id": "66fb25c4-4d13-4406-8ac0-da4d7ddc8896",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
@@ -774,6 +815,34 @@
 				},
 				{
 					"name": "/file Upload File (png)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "98c8ffcb-b14f-4db9-9952-0063205f3f78",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"id": "b0ecb9a5-1d88-446f-a94c-2de9f6f3d53f",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
@@ -809,6 +878,34 @@
 				},
 				{
 					"name": "/file Upload File (pdf)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "17928a8f-8920-4919-91fb-9e48bce6e1d1",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"id": "595e6571-91bf-4781-89d8-9759a17d8968",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
@@ -843,6 +940,34 @@
 				},
 				{
 					"name": "/file Upload File (word)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6b5f4993-48a2-4dc4-b06a-8e06f324a016",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"id": "ce6ae1d9-85ec-4cbb-a3c0-5b963119987d",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
