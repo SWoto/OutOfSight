@@ -777,7 +777,7 @@
 								"token": "{{access_token}}"
 							}
 						},
-						"method": "DELETE",
+						"method": "GET",
 						"header": [],
 						"body": {
 							"mode": "formdata",
