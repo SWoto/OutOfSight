@@ -1025,6 +1025,68 @@
 					"response": []
 				},
 				{
+					"name": "/file Upload File (pdf) Big",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "17928a8f-8920-4919-91fb-9e48bce6e1d1",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "06d45a57-3b6c-4cc0-bd43-71f6a1619f7c",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1efef8e7-c123-4fe0-91cc-8806f3862544"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				},
+				{
 					"name": "/file Upload File (word)",
 					"event": [
 						{
