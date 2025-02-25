@@ -8,6 +8,7 @@ from functools import lru_cache
 class BaseConfig(BaseSettings):
     ENV_STATE: Optional[str] = None
     ALGORITHM: str = "HS256"
+    TIMEZONE_OFFSET:int = -3
 
     MIN_ROLE: int = 0
     MAX_ROLE: int = 99
@@ -39,6 +40,10 @@ class GlobalConfig(BaseConfig):
 
     REDIS_HOST: Optional[str] = None
     REDIS_PORT: Optional[str] = None
+
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
+    AWS_REGION: Optional[str] = None
 
     DBBaseModel: Any = declarative_base()
 

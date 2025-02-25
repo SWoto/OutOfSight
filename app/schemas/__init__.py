@@ -1,4 +1,5 @@
 from app.schemas.status import PlainStatusSchema
 from app.schemas.users import PlainUserSchema, PostPutUserSchema, ReturnUserSchema, PatchUserSchema, LoginUserSchema
 from app.schemas.roles import PlainRoleSchema, ReturnRoleSchema, RoleWithAuthoritySchema, ReturnRoleWithAuthoritySchema
+from app.schemas.files import PlainFileSchema, ReturnFileSchema, ReturnNestedFileSchema, ReturnNestedHistoricalFileSchema
 from app.schemas.nested_schemas import ReturnUserWithRoleIDSchema, ReturnUserWithRoleObjSchema, ReturnRoleWithUsersObjSchema, PostPutUserWithRoleIDSchema

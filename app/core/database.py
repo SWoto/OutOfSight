@@ -11,7 +11,7 @@ from sqlalchemy import text
 from typing import AsyncGenerator
 
 from app.core.configs import settings
-from app.models import RolesModel, UsersModel
+from app.models import RolesModel, UsersModel, FileStatusModel
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +103,8 @@ async def initialize_default_values() -> None:
                                password=settings.ADMIN_DEFAULT_PASSWORD, role_id=role_admin.id, confirmed=True)
             session.add(admin)
             await session.commit()
+
+        await FileStatusModel().initialize_default_statuses(session)
 
 
 async def create_tables() -> None:
