@@ -833,7 +833,7 @@
 								}
 							]
 						},
-						"url": "{{url}}:{{port}}{{API_STR}}/file/{{file_id}}"
+						"url": "{{url}}:{{port}}{{API_STR}}/file/status/{{file_id}}"
 					},
 					"response": []
 				},
