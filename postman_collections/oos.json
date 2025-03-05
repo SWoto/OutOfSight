@@ -795,7 +795,7 @@
 					"response": []
 				},
 				{
-					"name": "/file/statuses/<id> Get File Info with Status History",
+					"name": "/file/status/<id> Get File Info with Status History",
 					"event": [
 						{
 							"listen": "test",
