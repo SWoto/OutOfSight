@@ -6,11 +6,12 @@ from typing import Annotated, List
 import uuid
 from fastapi import Form, APIRouter, status, Depends, HTTPException, BackgroundTasks, File, UploadFile, BackgroundTasks
 from fastapi.responses import StreamingResponse
+from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTask
 
 from app.core.database import get_db_session
-from app.core.files import process_file_upload, process_file_download, get_temp_dir, delete_from_s3
+from app.core.files import process_file_upload, process_file_download, get_temp_dir, delete_from_s3, FileProcessor
 from app.models import FilesModel, UsersModel
 from app.core.auth import get_current_user
 from app.schemas import ReturnFileSchema, ReturnNestedFileSchema, ReturnNestedHistoricalFileSchema
@@ -37,13 +38,18 @@ async def check_file_and_user(file_id, user_id, db) -> FilesModel:
 
 
 @router.post('/', status_code=status.HTTP_202_ACCEPTED, response_model=ReturnNestedHistoricalFileSchema, tags=["Files"], summary="Upload any file and encrypt it", description="Upload any file for encrypt data backup.")
-async def post_file(file: Annotated[UploadFile, File(...)], encryption_key: Annotated[str, Form()], current_user: Annotated[UsersModel, Depends(get_current_user)], background_tasks: BackgroundTasks, db: Annotated[AsyncSession, Depends(get_db_session)]):
+async def post_file(file: Annotated[UploadFile, File(...)], encryption_key: Annotated[SecretStr, Form()], current_user: Annotated[UsersModel, Depends(get_current_user)], background_tasks: BackgroundTasks, db: Annotated[AsyncSession, Depends(get_db_session)]):
 
     if not file:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="File has not been received.")
 
-    logger.info(f"Received file: {file.filename} ({file.content_type})")
+    if not encryption_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Encryption Key has not been received.")
+
+    logger.info(
+        f"Received file: {file.filename}, ({file.content_type}), {file.size} bytes")
 
     if file.size > MAX_FILE_SIZE:
         raise HTTPException(
@@ -60,20 +66,24 @@ async def post_file(file: Annotated[UploadFile, File(...)], encryption_key: Anno
     await new_file.add_status("uploaded", db)
     await db.refresh(new_file)
 
+    # Previously was used deepcopy to send the file to the background task
+    # as a way to do all the processing after returning the request.
+    # However, for larger files, around 800kB or more, it starts to get
+    # really slowish and close to 1MB or more, is fails and throw errors.
+    # previous: copy.deepcopy(file)
+    fileprocessor_obj = await FileProcessor.create(file, new_file.id, new_file.user_id, encryption_key)
+
     # TODO: Add task for message brokers
     background_tasks.add_task(
         process_file_upload,
-        file=copy.deepcopy(file),
-        user_id=current_user.id,
-        new_file_id=new_file.id,
-        encryption_key=encryption_key
+        file=fileprocessor_obj,
     )
 
     return new_file
 
 
 @router.get('/download/{id}', status_code=status.HTTP_200_OK, tags=["Files"], summary="Download target file and decrypt it", description="Get target file from S3 Bucket, decrypt it and sends it raw to the user")
-async def download_file(id: uuid.UUID, encryption_key: Annotated[str, Form()], db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], temp_dir: Annotated[str, Depends(get_temp_dir)]):
+async def download_file(id: uuid.UUID, encryption_key: Annotated[SecretStr, Form()], db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], temp_dir: Annotated[str, Depends(get_temp_dir)]):
 
     obj = await check_file_and_user(id, current_user.id, db)
 
@@ -106,8 +116,8 @@ async def get_file_info(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_d
     return await check_file_and_user(id, current_user.id, db)
 
 
-@router.get('/statuses/{id}', response_model=ReturnNestedHistoricalFileSchema, status_code=status.HTTP_200_OK, tags=["Files"], summary="Return file information", description="Check if user is file owner and return the file information.")
-async def get_file_info_with_statuses(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)]):
+@router.get('/status/{id}', response_model=ReturnNestedHistoricalFileSchema, status_code=status.HTTP_200_OK, tags=["Files"], summary="Return file information", description="Check if user is file owner and return the file information.")
+async def get_file_info_with_status(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)]):
 
     return await check_file_and_user(id, current_user.id, db)
 
