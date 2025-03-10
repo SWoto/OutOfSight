@@ -3,7 +3,7 @@
 		"_postman_id": "933d76b9-e882-462f-a512-7275ab56b6e2",
 		"name": "OutOfSight",
 		"description": "# 🚀 Get started here\n\nThis template guides you through CRUD operations (GET, POST, PUT, DELETE), variables, and tests.\n\n## 🔖 **How to use this template**\n\n#### **Step 1: Send requests**\n\nRESTful APIs allow you to perform CRUD operations using the POST, GET, PUT, and DELETE HTTP methods.\n\nThis collection contains each of these [request](https://learning.postman.com/docs/sending-requests/requests/) types. Open each request and click \"Send\" to see what happens.\n\n#### **Step 2: View responses**\n\nObserve the response tab for status code (200 OK), response time, and size.\n\n#### **Step 3: Send new Body data**\n\nUpdate or add new data in \"Body\" in the POST request. Typically, Body data is also used in PUT request.\n\n```\n{\n    \"name\": \"Add your name in the body\"\n}\n\n ```\n\n#### **Step 4: Update the variable**\n\nVariables enable you to store and reuse values in Postman. We have created a [variable](https://learning.postman.com/docs/sending-requests/variables/) called `base_url` with the sample request [https://postman-api-learner.glitch.me](https://postman-api-learner.glitch.me). Replace it with your API endpoint to customize this collection.\n\n#### **Step 5: Add tests in the \"Tests\" tab**\n\nTests help you confirm that your API is working as expected. You can write test scripts in JavaScript and view the output in the \"Test Results\" tab.\n\n<img src=\"https://content.pstmn.io/b5f280a7-4b09-48ec-857f-0a7ed99d7ef8/U2NyZWVuc2hvdCAyMDIzLTAzLTI3IGF0IDkuNDcuMjggUE0ucG5n\">\n\n## 💪 Pro tips\n\n- Use folders to group related requests and organize the collection.\n- Add more [scripts](https://learning.postman.com/docs/writing-scripts/intro-to-scripts/) in \"Tests\" to verify if the API works as expected and execute workflows.\n    \n\n## 💡Related templates\n\n[API testing basics](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9a37a28-055b-49cd-8c7e-97494a21eb54&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[API documentation](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9c28f47-1253-44af-a2f3-20dce4da1f18&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[Authorization methods](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=31a9a6ed-4cdf-4ced-984c-d12c9aec1c27&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)",
-		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+		"schema": "https://schema.postman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
 		{
@@ -405,6 +405,12 @@
 					],
 					"id": "24da87a6-eeee-4001-83e0-41df3154f09b",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
 						"method": "GET",
 						"header": [],
 						"url": "{{url}}:{{port}}{{API_STR}}/user/{{id}}",
@@ -505,10 +511,28 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6d93496c-319f-4ce9-bc77-fff4c70376a9",
+								"id": "f9c8a601-d9a4-41e5-8d9c-36d27502a7dd",
 								"exec": [
+									"// Check if the response status code is 200",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
 									"var data = pm.response.json();",
-									"pm.environment.set(\"access_token\", data.access_token);"
+									"",
+									"// Verify that the access_token exists in the response",
+									"pm.test(\"Response contains access_token\", function () {",
+									"    pm.expect(data).to.have.property(\"access_token\");",
+									"});",
+									"",
+									"// Set the access_token as an environment variable if it exists",
+									"if (data.access_token) {",
+									"    pm.environment.set(\"access_token\", data.access_token);",
+									"    console.log(`Access token set to environment: ${data.access_token}`);",
+									"} else {",
+									"    console.error(\"Access token is missing in the response.\");",
+									"}"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -530,7 +554,6 @@
 								{
 									"key": "password",
 									"value": "{{rand_password}}",
-									"description": "}}",
 									"type": "text"
 								}
 							]
@@ -632,6 +655,501 @@
 				}
 			],
 			"id": "bc1a5f15-39ef-4ea2-a68d-6bab0f377cb4"
+		},
+		{
+			"name": "File",
+			"item": [
+				{
+					"name": "/file Get All User Files",
+					"id": "1569bed1-2ac9-4177-aaff-b93678eef95b",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				},
+				{
+					"name": "/file/download/<id> Download File",
+					"id": "df70d3cd-b8e9-498e-b546-8a064a59754b",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text",
+									"uuid": "ac71e664-8ab5-4330-aa7e-313f6f57e609"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/download/{{file_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "/file/<id> Delete File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6c91d91e-94d4-4e8f-b37f-12b894e0759c",
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "135c18a7-c38d-432e-b41b-20ab853a664e",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text",
+									"uuid": "ac71e664-8ab5-4330-aa7e-313f6f57e609"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/{{file_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "/file/<id> Get File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6c91d91e-94d4-4e8f-b37f-12b894e0759c",
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "f92150ef-e4ec-4521-9b00-b37519df71fc",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text",
+									"uuid": "ac71e664-8ab5-4330-aa7e-313f6f57e609"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/{{file_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "/file/status/<id> Get File Info with Status History",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6c91d91e-94d4-4e8f-b37f-12b894e0759c",
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "743844c2-f4bc-48c1-ba1c-e749a80620c7",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text",
+									"uuid": "ac71e664-8ab5-4330-aa7e-313f6f57e609"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/status/{{file_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "/file Upload File (jpeg)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e5581089-0151-472f-b16a-e7d1da37283a",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "66fb25c4-4d13-4406-8ac0-da4d7ddc8896",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1ef5067e-d88b-4df0-bfc0-ac8dbee1f3c9"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				},
+				{
+					"name": "/file Upload File (png)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "98c8ffcb-b14f-4db9-9952-0063205f3f78",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "b0ecb9a5-1d88-446f-a94c-2de9f6f3d53f",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1ef5067e-d88b-4df0-bfc0-ac8dbee1f3c9"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text",
+									"uuid": "14c578c3-2c7a-46b4-aa30-0a10fbfe6026"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				},
+				{
+					"name": "/file Upload File (pdf)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "17928a8f-8920-4919-91fb-9e48bce6e1d1",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "595e6571-91bf-4781-89d8-9759a17d8968",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1efef8e7-c123-4fe0-91cc-8806f3862544"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				},
+				{
+					"name": "/file Upload File (pdf) Big",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "17928a8f-8920-4919-91fb-9e48bce6e1d1",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "06d45a57-3b6c-4cc0-bd43-71f6a1619f7c",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1efef8e7-c123-4fe0-91cc-8806f3862544"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				},
+				{
+					"name": "/file Upload File (word)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6b5f4993-48a2-4dc4-b06a-8e06f324a016",
+								"exec": [
+									"pm.test(\"Status code is 202\", function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"",
+									"pm.test(\"Response contains file id\", function () {",
+									"    pm.expect(data).to.have.property(\"id\");",
+									"});",
+									"",
+									"if (data.id) {",
+									"    pm.environment.set(\"file_id\", data.id);",
+									"    console.log(`file_id set to environment: ${data.id}`);",
+									"} else {",
+									"    console.error(\"field id is missing in the response.\");",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "ce6ae1d9-85ec-4cbb-a3c0-5b963119987d",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1eff12c3-521b-4030-9944-8a3046a36a1d"
+								},
+								{
+									"key": "encryption_key",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": "{{url}}:{{port}}{{API_STR}}/file/"
+					},
+					"response": []
+				}
+			],
+			"id": "51591937-330c-4df3-bcc0-2354bd9f7274"
 		}
 	],
 	"event": [
