@@ -104,6 +104,7 @@ async def initialize_default_values() -> None:
             session.add(admin)
             await session.commit()
 
+        # TODO: Change the other three above to make it use the class
         await FileStatusModel().initialize_default_statuses(session)
 
 

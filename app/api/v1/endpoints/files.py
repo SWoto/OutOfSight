@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTask
 
 from app.core.database import get_db_session
-from app.core.files import process_file_upload, process_file_download, get_temp_dir, delete_from_s3, FileProcessor
+from app.core.files import get_s3_handler, S3Handler
 from app.models import FilesModel, UsersModel
 from app.core.auth import get_current_user
 from app.schemas import ReturnFileSchema, ReturnNestedFileSchema, ReturnNestedHistoricalFileSchema
@@ -38,15 +38,11 @@ async def check_file_and_user(file_id, user_id, db) -> FilesModel:
 
 
 @router.post('/', status_code=status.HTTP_202_ACCEPTED, response_model=ReturnNestedHistoricalFileSchema, tags=["Files"], summary="Upload any file and encrypt it", description="Upload any file for encrypt data backup.")
-async def post_file(file: Annotated[UploadFile, File(...)], encryption_key: Annotated[SecretStr, Form()], current_user: Annotated[UsersModel, Depends(get_current_user)], background_tasks: BackgroundTasks, db: Annotated[AsyncSession, Depends(get_db_session)]):
+async def post_file(file: Annotated[UploadFile, File(...)], current_user: Annotated[UsersModel, Depends(get_current_user)], background_tasks: BackgroundTasks, db: Annotated[AsyncSession, Depends(get_db_session)], s3_handler: S3Handler = Depends(get_s3_handler)):
 
     if not file:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="File has not been received.")
-
-    if not encryption_key:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Encryption Key has not been received.")
 
     logger.info(
         f"Received file: {file.filename}, ({file.content_type}), {file.size} bytes")
@@ -71,23 +67,23 @@ async def post_file(file: Annotated[UploadFile, File(...)], encryption_key: Anno
     # However, for larger files, around 800kB or more, it starts to get
     # really slowish and close to 1MB or more, is fails and throw errors.
     # previous: copy.deepcopy(file)
-    fileprocessor_obj = await FileProcessor.create(file, new_file.id, new_file.user_id, encryption_key)
+    await s3_handler.create_upload_file_handler(new_file, file)
 
     # TODO: Add task for message brokers
     background_tasks.add_task(
-        process_file_upload,
-        file=fileprocessor_obj,
+        s3_handler.process_file_upload,
     )
 
     return new_file
 
 
 @router.get('/download/{id}', status_code=status.HTTP_200_OK, tags=["Files"], summary="Download target file and decrypt it", description="Get target file from S3 Bucket, decrypt it and sends it raw to the user")
-async def download_file(id: uuid.UUID, encryption_key: Annotated[SecretStr, Form()], db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], temp_dir: Annotated[str, Depends(get_temp_dir)]):
+async def download_file(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], s3_handler: S3Handler = Depends(get_s3_handler)):
 
     obj = await check_file_and_user(id, current_user.id, db)
 
-    file_path = await process_file_download(id, temp_dir, encryption_key)
+    await s3_handler.create_download_file_handler(obj)
+    file_path = await s3_handler.process_file_download()
 
     if not file_path:
         raise HTTPException(
@@ -128,9 +124,9 @@ async def get_all_files_info(db: Annotated[AsyncSession, Depends(get_db_session)
 
 
 @router.delete('/{id}')
-async def delete_file(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)]):
+async def delete_file(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], s3_handler: S3Handler = Depends(get_s3_handler)):
     obj = await check_file_and_user(id, current_user.id, db)
 
-    if not delete_from_s3(obj.path):
+    if not s3_handler.delete_from_s3(obj.path):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete file. Try again later.")
