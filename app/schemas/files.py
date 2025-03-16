@@ -13,9 +13,8 @@ class PlainFileSchema(BaseModel):
 class ReturnFileSchema(PlainFileSchema):
     id: UUID4
 
+
 # ---- File Status
-
-
 class PlainFileStatusSchema(BaseModel):
     name: str
     description: str
