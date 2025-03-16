@@ -1,10 +1,9 @@
-from pydantic import BaseModel, UUID4, PositiveFloat, field_validator
+from pydantic import BaseModel, UUID4, PositiveFloat
 from typing import List
 
-from app.core.configs import settings
-
-
 # Removed path. Used only internally and should not be returned to end-user
+
+
 class PlainFileSchema(BaseModel):
     filename: str
     filetype: str
