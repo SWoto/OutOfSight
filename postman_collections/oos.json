@@ -1025,7 +1025,7 @@
 					"response": []
 				},
 				{
-					"name": "/file Upload File (pdf) Big",
+					"name": "/file Upload File (txt) Big",
 					"event": [
 						{
 							"listen": "test",
