@@ -89,9 +89,9 @@ def create_confirmation_token(subject: str) -> str:
 
 # TODO: Add an MQTT handler
 async def send_user_confirmation_email(email: EmailStr, confirmation_url: HttpUrl):
-    subject = "Successfully signed up to OOS - Confirm your email"
+    subject = "Successfully signed up to CF - Confirm your email"
     body = (
-        f"Hi {email}! You have successfully signed up to the OutOfSight (OOS)."
+        f"Hi {email}! You have successfully signed up to the CloudFront (CF)."
         " Please confirm your email by clicking on the"
         f" following link: {confirmation_url}. \n"
         "Note: This link is valid only for 30 minutes."
