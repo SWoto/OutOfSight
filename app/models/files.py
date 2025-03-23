@@ -1,10 +1,24 @@
-from typing import List
-from sqlalchemy import UUID, Column, String, Numeric, ForeignKey, select
+from enum import Enum
+from typing import Dict, List, Optional
+from pydantic import UUID4
+from sqlalchemy import UUID, Column, String, Numeric, ForeignKey, and_, desc, or_, select
 from sqlalchemy.orm import relationship, mapped_column
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Self
 
 from app.models.base import BaseModel
+
+
+class FileStatus(Enum):
+    RECEIVED = {"name": "received",
+                "description": "File has been received by the server."}
+    UPLOADING = {"name": "uploading",
+                 "description": "File is being uploaded to S3."}
+    UPLOADED = {"name": "uploaded",
+                "description": "File was successfully uploaded to S3."}
+    FAILED = {"name": "failed", "description": "Failed to upload file to S3."}
+    DELETED = {"name": "deleted", "description": "File was deleted from S3."}
 
 
 class FilesModel(BaseModel):
@@ -22,17 +36,67 @@ class FilesModel(BaseModel):
     status_history = relationship(
         "FileStatusHistoryModel", back_populates="file", lazy='selectin')
 
+    @hybrid_property
+    def last_status(self) -> Optional[str]:
+        if not self.status_history:
+            return None
+
+        last_status_history = max(
+            self.status_history,
+            key=lambda x: x.created_on,
+            default=None
+        )
+        return last_status_history.status.name if last_status_history else None
+
     def __init__(self, *args, **kwargs):
         super(FilesModel, self).__init__(*args, **kwargs)
 
     @classmethod
-    async def find_by_user_id(cls, user_id: UUID, db: AsyncSession) -> List[Self] | None:
-        query = select(cls).filter_by(user_id=user_id)
+    async def find_by_id_removing_deleted_or_failed(cls, id: UUID4, db: AsyncSession, remove_deleted: bool = True, remove_failed: bool = True) -> Self | None:
+        if remove_deleted and remove_failed:
+            query = (
+                select(cls)
+                .join(FileStatusHistoryModel, FileStatusHistoryModel.file_id == cls.id)
+                .join(FileStatusModel, FileStatusHistoryModel.status_id == FileStatusModel.id)
+                .filter(and_(cls.id == id, or_(FileStatusModel.name == "deleted", FileStatusModel.name == "failed")))
+            )
+        elif remove_deleted:
+            query = (
+                select(cls)
+                .join(FileStatusHistoryModel, FileStatusHistoryModel.file_id == cls.id)
+                .join(FileStatusModel, FileStatusHistoryModel.status_id == FileStatusModel.id)
+                .filter(and_(cls.id == id, FileStatusModel.name == "deleted"))
+            )
+        elif remove_failed:
+            query = (
+                select(cls)
+                .join(FileStatusHistoryModel, FileStatusHistoryModel.file_id == cls.id)
+                .join(FileStatusModel, FileStatusHistoryModel.status_id == FileStatusModel.id)
+                .filter(and_(cls.id == id, FileStatusModel.name == "failed"))
+            )
+        else:
+            return await cls.find_by_id(id, db)
+
         result = await db.execute(query)
         return result.scalars().all()
 
-    async def add_status(self, status_name, db: AsyncSession):
-        status_obj = await FileStatusModel().find_by_name(status_name, db)
+    @classmethod
+    async def find_by_user_id(cls, user_id: UUID, db: AsyncSession, include_deleted=True) -> List[Self] | None:
+        if not include_deleted:
+            query = (
+                select(cls)
+                .join(FileStatusHistoryModel, FileStatusHistoryModel.file_id == cls.id)
+                .join(FileStatusModel, FileStatusHistoryModel.status_id == FileStatusModel.id)
+                .filter(and_(cls.user_id == user_id, FileStatusModel.name == "deleted"))
+            )
+        else:
+            query = select(cls).filter_by(user_id=user_id)
+
+        result = await db.execute(query)
+        return result.scalars().all()
+
+    async def add_status(self, status: FileStatus, db: AsyncSession):
+        status_obj = await FileStatusModel().find_by_name(status.value['name'], db)
         if not status_obj:
             return
 
@@ -65,20 +129,13 @@ class FileStatusModel(BaseModel):
         return result.scalars().unique().one_or_none()
 
     @classmethod
-    async def initialize_default_statuses(cls, db: AsyncSession):
-        default_statuses = [
-            {"name": "uploaded", "description": "File has been uploaded to backend."},
-            {"name": "processing",
-                "description": "File is being zipped, encrypted and uploaded to S3."},
-            {"name": "completed",
-                "description": "zipped and encrypted file was successfully uploaded to S3."},
-            {"name": "failed", "description": "Failed to process."},
-        ]
-        for status_data in default_statuses:
-            status = await db.execute(select(cls).filter_by(name=status_data["name"]))
-            if not status.scalar_one_or_none():
-                db.add(cls(**status_data))
-        await db.commit()
+    async def initialize_default(cls, db: AsyncSession, statuses: List[Dict]):
+        if statuses:
+            for status_data in statuses:
+                status = await cls.find_by_name(status_data["name"], db)
+                if not status:
+                    db.add(cls(**status_data))
+            await db.commit()
 
 
 class FileStatusHistoryModel(BaseModel):

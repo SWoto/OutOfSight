@@ -8,10 +8,12 @@ from functools import lru_cache
 class BaseConfig(BaseSettings):
     ENV_STATE: Optional[str] = None
     ALGORITHM: str = "HS256"
-    TIMEZONE_OFFSET:int = -3
+    TIMEZONE_OFFSET: int = -3
 
     MIN_ROLE: int = 0
     MAX_ROLE: int = 99
+
+    S3_BUCKET_NAME: Optional[str] = None
 
     """Loads the dotenv file. Including this is necessary to get
     pydantic to load a .env file."""

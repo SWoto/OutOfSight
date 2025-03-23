@@ -12,6 +12,7 @@ from typing import AsyncGenerator
 
 from app.core.configs import settings
 from app.models import RolesModel, UsersModel, FileStatusModel
+from app.models.files import FileStatus
 
 logger = logging.getLogger(__name__)
 
@@ -82,30 +83,33 @@ async def create_database(base_url: str, database_name: str) -> bool:
 async def initialize_default_values() -> None:
     logger.info("Initializing default values in the database")
     async with Session() as session:
-        if not await RolesModel.find_by_authority(settings.MIN_ROLE, session):
-            logger.debug("Did not find default role, creating it")
-            role_min = RolesModel(authority=settings.MIN_ROLE, name="Default")
-            session.add(role_min)
-            await session.commit()
+        default_roles = [
+            {
+                "authority": settings.MAX_ROLE,
+                "name": "SuperUser",
+            },
+            {
+                "authority": settings.MIN_ROLE,
+                "name": "Default",
+            },
+        ]
+        await RolesModel.initialize_default(session, default_roles)
 
-        if not await RolesModel.find_by_authority(settings.MAX_ROLE, session):
-            logger.debug("Did not find superuser role, creating it")
-            role_max = RolesModel(
-                authority=settings.MAX_ROLE, name="SuperUser")
-            session.add(role_max)
-            await session.commit()
+        role_admin = await RolesModel.find_by_authority(
+            settings.MAX_ROLE, session)
+        default_users = [
+            {
+                "nickname": "SWoto",
+                "email": settings.ADMIN_DEFAULT_EMAIL,
+                "password": settings.ADMIN_DEFAULT_PASSWORD,
+                "role_id": role_admin.id,
+                "confirmed": True,
+            },
+        ]
+        await UsersModel.initialize_default(session, default_users)
 
-        if not await UsersModel.find_by_email(settings.ADMIN_DEFAULT_EMAIL, session):
-            logger.debug("Did not find admin user, creating it")
-            role_admin = await RolesModel.find_by_authority(
-                settings.MAX_ROLE, session)
-            admin = UsersModel(nickname="SWoto", email=settings.ADMIN_DEFAULT_EMAIL,
-                               password=settings.ADMIN_DEFAULT_PASSWORD, role_id=role_admin.id, confirmed=True)
-            session.add(admin)
-            await session.commit()
-
-        # TODO: Change the other three above to make it use the class
-        await FileStatusModel().initialize_default_statuses(session)
+        default_statuses = [status.value for status in FileStatus]
+        await FileStatusModel.initialize_default(session, default_statuses)
 
 
 async def create_tables() -> None:

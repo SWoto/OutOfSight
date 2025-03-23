@@ -11,9 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTask
 
 from app.core.database import get_db_session
-from app.core.files import get_s3_handler, S3Handler
+from app.core.s3_handler import get_s3_handler, S3Handler, S3FileNotFoundError, S3DownloadError
 from app.models import FilesModel, UsersModel
 from app.core.auth import get_current_user
+from app.models.files import FileStatus
 from app.schemas import ReturnFileSchema, ReturnNestedFileSchema, ReturnNestedHistoricalFileSchema
 
 
@@ -21,11 +22,12 @@ router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 10 MB
 
 
-async def check_file_and_user(file_id, user_id, db) -> FilesModel:
-    obj = await FilesModel().find_by_id(file_id, db)
+async def check_file_and_user(file_id, user_id, db, remove_deleted: bool = False, remove_failed: bool = False) -> FilesModel:
+    obj = await FilesModel().find_by_id(file_id, db) if remove_deleted or remove_failed else await FilesModel().find_by_id_removing_deleted_or_failed(file_id, db, remove_deleted, remove_failed)
+
     if not obj:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"File does not exists")
@@ -54,79 +56,71 @@ async def post_file(file: Annotated[UploadFile, File(...)], current_user: Annota
         )
 
     _, file_extension = os.path.splitext(file.filename)
-    new_file = FilesModel(filename=file.filename, filetype=file_extension,
-                          size_kB=file.size/1024, user_id=current_user.id)
-    db.add(new_file)
+    new_file_model = FilesModel(filename=file.filename, filetype=file_extension,
+                                size_kB=file.size/1024, user_id=current_user.id)
+    db.add(new_file_model)
     await db.commit()
 
-    await new_file.add_status("uploaded", db)
-    await db.refresh(new_file)
+    await new_file_model.add_status(FileStatus.RECEIVED, db)
+    await db.refresh(new_file_model)
 
-    # Previously was used deepcopy to send the file to the background task
-    # as a way to do all the processing after returning the request.
-    # However, for larger files, around 800kB or more, it starts to get
-    # really slowish and close to 1MB or more, is fails and throw errors.
-    # previous: copy.deepcopy(file)
-    await s3_handler.create_upload_file_handler(new_file, file)
+    await s3_handler.handle_file_upload(new_file_model.id, file)
 
-    # TODO: Add task for message brokers
-    background_tasks.add_task(
-        s3_handler.process_file_upload,
-    )
-
-    return new_file
+    return new_file_model
 
 
 @router.get('/download/{id}', status_code=status.HTTP_200_OK, tags=["Files"], summary="Download target file and decrypt it", description="Get target file from S3 Bucket, decrypt it and sends it raw to the user")
 async def download_file(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], s3_handler: S3Handler = Depends(get_s3_handler)):
 
-    obj = await check_file_and_user(id, current_user.id, db)
+    obj = await check_file_and_user(id, current_user.id, db, remove_deleted=True, remove_failed=True)
 
-    await s3_handler.create_download_file_handler(obj)
-    file_path = await s3_handler.process_file_download()
-
-    if not file_path:
+    try:
+        return StreamingResponse(
+            s3_handler.handle_file_download(obj.path),
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f"attachment; filename={obj.filename}"},
+        )
+    except S3FileNotFoundError:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to download file. Try again later.")
-
-    with open(file_path, "rb") as file:
-        file_data = file.read()
-
-    file_like = io.BytesIO(file_data)
-
-    # Uses StreamingResponse with io.BytesIO because tempfile.TemporaryDirectory will
-    # close the context before FileResponse is sent, thus having to save the file
-    # without using TemporaryDirectory, which is not good. As a way to solve this,
-    # the file is loaded from the TemporaryDirectory into memory and them sent to the user.
-    return StreamingResponse(
-        file_like,
-        media_type="application/octet-stream",
-        headers={"Content-Disposition": f"attachment; filename={obj.filename}"},
-        background=BackgroundTask(file_like.close)
-    )
+            status_code=status.HTTP_404_NOT_FOUND, detail="File not found in S3 server. Check file status.")
+    except S3DownloadError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
+# TODO: Add query param to include or exclude deleted
 @router.get('/{id}', response_model=ReturnFileSchema, status_code=status.HTTP_200_OK, tags=["Files"], summary="Return file information", description="Check if user is file owner and return the file information.")
-async def get_file_info(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)]):
+async def get_file_info(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], remove_failed: bool = False, remove_deleted: bool = False):
 
-    return await check_file_and_user(id, current_user.id, db)
+    return await check_file_and_user(id, current_user.id, db, remove_deleted, remove_failed)
 
 
+# TODO: Add query param to include or exclude deleted
 @router.get('/status/{id}', response_model=ReturnNestedHistoricalFileSchema, status_code=status.HTTP_200_OK, tags=["Files"], summary="Return file information", description="Check if user is file owner and return the file information.")
-async def get_file_info_with_status(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)]):
+async def get_file_info_with_status(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], remove_failed: bool = False, remove_deleted: bool = False):
 
-    return await check_file_and_user(id, current_user.id, db)
+    return await check_file_and_user(id, current_user.id, db, remove_deleted, remove_failed)
 
 
+# TODO: Add query param to include or exclude deleted
 @router.get('/', response_model=List[ReturnFileSchema], tags=["Files"], summary="Download target file and decrypt it", description="Get target file from S3 Bucket, decrypt it and sends it raw to the user")
-async def get_all_files_info(db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)]):
-    return await FilesModel().find_by_user_id(current_user.id, db)
+async def get_all_files_info(db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], remove_failed: bool = False, remove_deleted: bool = False):
+    return await FilesModel().find_by_id_removing_deleted_or_failed(current_user.id, db, remove_deleted, remove_failed)
 
 
+# TODO: Handle failed when requested to delete
 @router.delete('/{id}')
 async def delete_file(id: uuid.UUID, db: Annotated[AsyncSession, Depends(get_db_session)], current_user: Annotated[UsersModel, Depends(get_current_user)], s3_handler: S3Handler = Depends(get_s3_handler)):
-    obj = await check_file_and_user(id, current_user.id, db)
+    obj = await check_file_and_user(id, current_user.id, db, remove_deleted=True, remove_failed=False)
 
-    if not s3_handler.delete_from_s3(obj.path):
+    if obj.last_status == "failed":
+        await obj.add_status(FileStatus.DELETED, db)
+        return
+
+    try:
+        if not await s3_handler.delete_from_s3(obj.path, obj.id):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete file. Try again later.")
+    except S3DownloadError:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete file. Try again later.")
+            status_code=status.HTTP_404_NOT_FOUND, detail="File not found in the S3 bucket.")

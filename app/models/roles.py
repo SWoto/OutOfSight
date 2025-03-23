@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, select, Integer
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Self
+from typing import Dict, List, Self
 
 from sqlalchemy.orm import relationship, validates
 
@@ -31,3 +31,12 @@ class RolesModel(BaseModel):
         query = select(cls).filter_by(authority=authority)
         result = await db.execute(query)
         return result.scalars().unique().one_or_none()
+
+    @classmethod
+    async def initialize_default(cls, db: AsyncSession, roles: List[Dict]):
+        if roles:
+            for role_data in roles:
+                existing_role = await cls.find_by_authority(role_data["authority"], db)
+                if not existing_role:
+                    db.add(cls(**role_data))
+            await db.commit()
