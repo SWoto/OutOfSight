@@ -1,34 +1,53 @@
-# OutOfSight
+# CloudFlow
 
-OutOfSight is a solution designed to encrypt and decrypt PDF files.
+CloudFlow is a file processing solution built with FastAPI, AWS EC2, AWS S3, SQS, and Lambda. It demonstrates how to handle file uploads, process files asynchronously, and store results in the cloud.
 
-## Overview
+# Overview
 
-OutOfSight provides a web-based platform where authenticated users can:
+CloudFlow provides a backend API for uploading files and processing them asynchronously using AWS services. The workflow includes:
 
-- Encrypt and securely back up their PDF files using user-specific encryption keys.
-- Download encrypted files or decrypt them directly before downloading.
+1. **File Upload**: Users upload files via a FastAPI endpoint hosted on an EC2 instance.
+2. **Cloud Storage**: Files are stored in an S3 bucket.
+3. **Message Queue**: An SQS queue is use for queuing the tasks.
+4. **File Processing**: AWS Lambda processes the files and saves the results to another S3 bucket.
 
-## Features
 
-- **Encryption**: Protect sensitive PDF files with user-specific encryption keys.
-- **Decryption**: Retrieve files in their original form when needed.
-- **Backup**: Securely back up encrypted files to the cloud.
-- **Web Interface**: A user-friendly platform for managing file encryption and backups.
+## Workflow
 
-## Cloud Integration
+1. **Upload File**:
+   - Send a POST request to the `/upload` endpoint hosted on an EC2 instance with a file.
+   - The file is saved to the **Input S3 Bucket**.
+   - A message is sent to the **SQS Queue** with file metadata.
 
-This solution integrates with AWS Cloud Services to ensure secure storage and seamless file management. 
+2. **Process File**:
+   - AWS Lambda is triggered by the SQS message.
+   - The Lambda function processes the file (e.g., extracts text, converts format).
+   - The processed file is saved to the **Output S3 Bucket**.
 
-- **Amazon S3**: For encrypted file storage and retrieval.
-- **Amazon EC2**: To host the FastAPI backend.
-- **Amazon RDS**: To manage user data and authentication details.
+3. **Retrieve Processed File**:
+   - Users can download the processed file from the **Output S3 Bucket**.
 
-## Contributing
+## AWS Services Used
+
+- **EC2**: Hosts the FastAPI backend.
+- **S3**: For storing raw and processed files.
+- **SQS**: For message queuing and triggering Lambda.
+- **Lambda**: For serverless file processing.
+- **FastAPI**: For the backend API.
+
+## Getting Started
+
+### Prerequisites
+
+- AWS account with necessary permissions.
+- Python 3.10+ and FastAPI installed.
+- AWS CLI configured.
+
+### Deployment
 
 **Clone this repository**:
    ```bash
-   git clone https://github.com/SWoto/OutOfSight.git
+   git clone https://github.com/SWoto/CloudFront.git
    ```
 
 **Run Docker Compose**:
@@ -62,7 +81,7 @@ Follow these steps to set up your local environment for development.
 To begin, use the docker-compose file with the Dockerfile.dev for development and testing (`docker compose -f docker-compose.dev.yml up`). Access the container through VS Code's remote development feature and configure SSH port forwarding for remote connection to an AWS RDS database. This is done using EC2 permissions. For example, execute the following command: `ssh -i .ssh/<my-key>.pem -4 -fNT -L 3307:<my-AWS-PostgreSQL-Endpoint>:5432 ec2-user@<my-EC2-Public-IPv4-DNS>`.
 Example:
 ```bash
-ssh -i .ssh/my-key.pem -4 -fNT -L 3307:oos-database-1.acbd12345.region.rds.amazonaws.com:543
+ssh -i .ssh/my-key.pem -4 -fNT -L 3307:cf-database-1.acbd12345.region.rds.amazonaws.com:543
 2 ec2-user@ec2-12-34-56-78.region.compute.amazonaws.com
 ```
 
@@ -96,7 +115,7 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
    - Select **VPC and more** under the creation options.
 
 1. **Configuration**:
-   - **Name**: Choose a base name for all items (e.g., `oos`) and it will automatically rename all the other items.
+   - **Name**: Chcfe a base name for all items (e.g., `cf`) and it will automatically rename all the other items.
    - **IPv4 CIDR block**: Leave as default (`10.0.0.0/16`).
    - **Number of Availability Zones**: Set to `1`.
    - **Number of Subnets**: 
@@ -118,8 +137,8 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
 
 1. **Create a VPC**:
    - Navigate to the **VPC Dashboard** and select **Create VPC** > **VPC only**.
-   - Add a **Name Tag** (e.g., `oos-vpc`).
-   - Choose **IPv4 CIDR manual input** and set the **IPv4 CIDR block** to `10.0.0.0/16`.
+   - Add a **Name Tag** (e.g., `cf-vpc`).
+   - Chcfe **IPv4 CIDR manual input** and set the **IPv4 CIDR block** to `10.0.0.0/16`.
    - Select **No IPv6 CIDR block**.
    - Leave **Tenancy** as **Default**.
    - Click **Create VPC**.
@@ -134,10 +153,10 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
 1. **Create Subnets**:
    - Go to the **Subnets** section and create the following:
      - **Public Subnet**:
-       - Name: `oos-public-subnet`
+       - Name: `cf-public-subnet`
        - IPv4 CIDR block: `10.0.1.0/24`
      - **Private Subnet**:
-       - Name: `oos-private-subnet`
+       - Name: `cf-private-subnet`
        - IPv4 CIDR block: `10.0.2.0/24`
 
 ---
@@ -145,16 +164,16 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
 #### Route Tables
 
 1. **Rename the Default Route Table**:
-   - Rename the route table created with the VPC to `oos-public-route-table`.
+   - Rename the route table created with the VPC to `cf-public-route-table`.
 
 1. **Create a Private Route Table**:
-   - Create a new route table and name it `oos-private-route-table`.
+   - Create a new route table and name it `cf-private-route-table`.
 
 1. **Assign Subnets**:
    - By default, both subnets are associated with the route table created during the VPC creation. Update the configurations to assign **explicit** route tables to each subnet
    - Edit the **Subnet Associations** for each route table:
-     - Assign `oos-public-route-table` to the **public subnet**.
-     - Assign `oos-private-route-table` to the **private subnet**.
+     - Assign `cf-public-route-table` to the **public subnet**.
+     - Assign `cf-private-route-table` to the **private subnet**.
 
 ---
 
@@ -162,10 +181,10 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
 
 1. **Create an Internet Gateway**:
    - Navigate to the **Internet Gateways** section and create a new Internet Gateway.
-   - Attach the Internet Gateway to the `oos-vpc`.
+   - Attach the Internet Gateway to the `cf-vpc`.
 
 1. **Enable Internet Access for the Public Subnet**:
-   - Edit the `oos-public-route-table` and add the following route:
+   - Edit the `cf-public-route-table` and add the following route:
      - **Destination**: `0.0.0.0/0`
      - **Target**: The created Internet Gateway.
 
@@ -173,7 +192,7 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
 
 ## EC2 Setup
 
-Follow these steps to create and configure an EC2 instance for the backend of OutOfSight.
+Follow these steps to create and configure an EC2 instance for the backend of CloudFront.
 
 ---
 
@@ -184,19 +203,19 @@ Follow these steps to create and configure an EC2 instance for the backend of Ou
    - Click **Launch Instance**.
 
 1. **Configure Instance Details**:
-   - **Name**: Enter `oos-ec2-backend` as the instance name.
+   - **Name**: Enter `cf-ec2-backend` as the instance name.
    - **AMI (Amazon Machine Image)**: Select **Amazon Linux 2 AMI (HVM)**.
    - **Instance Type**: Choose `t2.micro` (free-tier eligible).
 
 1. **Key Pair**:
    - Under **Key pair (login)**, select **Create new key pair**:
-     - **Key pair name**: Enter `oos-key-pair`.
+     - **Key pair name**: Enter `cf-key-pair`.
      - **Key pair type**: Select `RSA` (default).
      - **Private key file format**: Choose `.pem` (for SSH access).
    - Click **Create key pair** and download the `.pem` file.
-   - Move the `.pem` file to your `.ssh` directory (e.g., `~/.ssh/oos-key-pair.pem`) and secure it with the following command:
+   - Move the `.pem` file to your `.ssh` directory (e.g., `~/.ssh/cf-key-pair.pem`) and secure it with the following command:
      ```bash
-     chmod 0400 ~/.ssh/oos-key-pair.pem
+     chmod 0400 ~/.ssh/cf-key-pair.pem
      ```
      > This ensures the file is not readable by others, avoiding SSH error "unprotected private key file."
 
@@ -281,7 +300,7 @@ echo "Setup complete. Git, Docker and Docker Compose are ready to use."
    - Change permission
    - Use the `.pem` file from the key pair to SSH into the instance:
      ```bash
-     ssh -i "oos-key-pair.pem" ec2-user@<instance-public-ip>
+     ssh -i "cf-key-pair.pem" ec2-user@<instance-public-ip>
      ```
    - Replace `<instance-public-ip>` with the public IP address of your EC2 instance.
 

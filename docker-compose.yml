@@ -14,11 +14,11 @@ services:
         limits:
           memory: 250M
 
-  oos-fastapi-backend:
+  cf-fastapi-backend:
     build:
       context: app
       dockerfile: Dockerfile
-    container_name: oos-fastend
+    container_name: cf-fastend
     restart: unless-stopped
     ports:
       - '80:8000'
