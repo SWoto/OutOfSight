@@ -1,22 +1,27 @@
 FROM python:3.11.7
 
-# get curl for healthchecks
-RUN apt install curl
+# Install curl for healthchecks
+# Included rm -rf /var/lib/apt/lists/* to reduce image size by cleaning the package cache
+RUN apt update && apt install -y curl && rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user and set permissions
 RUN adduser nonroot --disabled-password
-RUN mkdir -p /home/pre-oos/
-RUN chown -R nonroot:nonroot /home/pre-oos
+RUN mkdir -p /home/pre-cf/ && chown -R nonroot:nonroot /home/pre-cf
 
-WORKDIR /home/pre-oos
+WORKDIR /home/pre-cf
 USER nonroot
 
-COPY --chown=nonroot:nonroot requirements.txt requirements.txt
+# Copy requirements
+COPY --chown=nonroot:nonroot requirements.txt .
 
-ENV VIRTUAL_ENV=/home/pre-oos/venv
+# Create and activate virtual environment
+ENV VIRTUAL_ENV=/home/pre-cf/venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip install -r requirements.txt
-RUN pip install --upgrade pip
 
-# random task to block container termination
+# Upgrade pip before installing dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Placeholder command for development; replace with a proper entrypoint in production
 CMD ["tail", "-f", "/dev/null"]
