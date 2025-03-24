@@ -1,21 +1,17 @@
-import io
 import os
 import logging
-import copy
 from typing import Annotated, List
 import uuid
 from fastapi import Form, APIRouter, status, Depends, HTTPException, BackgroundTasks, File, UploadFile, BackgroundTasks
 from fastapi.responses import StreamingResponse
-from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.background import BackgroundTask
 
 from app.core.database import get_db_session
-from app.core.s3_handler import get_s3_handler, S3Handler, S3FileNotFoundError, S3DownloadError
+from app.core.aws_handler import get_s3_handler, S3Handler, S3FileNotFoundError, S3DownloadError
 from app.models import FilesModel, UsersModel
 from app.core.auth import get_current_user
 from app.models.files import FileStatus
-from app.schemas import ReturnFileSchema, ReturnNestedFileSchema, ReturnNestedHistoricalFileSchema
+from app.schemas import ReturnFileSchema, ReturnNestedHistoricalFileSchema
 
 
 router = APIRouter()

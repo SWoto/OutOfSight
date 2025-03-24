@@ -5,7 +5,9 @@ from fastapi import APIRouter, status, Request, Depends, HTTPException, Backgrou
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
+from starlette.datastructures import URL
 
+from app.core.aws_handler import SQSHandler
 from app.core.configs import settings
 from app.core.database import get_db_session
 from app.schemas import PostPutUserSchema, ReturnUserSchema, PatchUserSchema, LoginUserSchema, ReturnUserWithRoleIDSchema, PostPutUserWithRoleIDSchema, ReturnUserWithRoleObjSchema
@@ -18,6 +20,16 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 BASE_NAME = "User"
+
+
+async def send_confirmation_email(nickname: str, email: str, confirmation_url: URL, queue_url: str = settings.AWS_SQS_CONFIRMATION_EMAIL_URL):
+    body = {
+        "action": "SubscriptionConfirmation",
+        "email": email,
+        "nickname": nickname,
+        "confirmation_url": str(confirmation_url)
+    }
+    await SQSHandler.send_message_to_sqs(queue_url, body)
 
 
 async def find_by_id_and_exception(Model: BaseModel, id: UUID, db: AsyncSession) -> BaseModel:
@@ -50,7 +62,8 @@ async def post_user(user: PostPutUserSchema, request: Request, background_tasks:
 
     # TODO: Add task for message brokers
     background_tasks.add_task(
-        send_user_confirmation_email,
+        send_confirmation_email,
+        nickname=new_user.nickname,
         email=new_user.email,
         confirmation_url=request.url_for(
             "get_confirmation_email",
@@ -77,7 +90,9 @@ async def get_confirmation_email(token: str, db: Annotated[AsyncSession, Depends
 
     return {"detail": "User confirmed"}
 
-#TODO: Should add exception for raise InterfaceError('connection is closed') or let the server return 500??
+# TODO: Should add exception for raise InterfaceError('connection is closed') or let the server return 500??
+
+
 @router.post('/login',  tags=["Users", "Authentication"], summary="User Login", description="Authenticate a user and return an access token.")
 async def login_user(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Annotated[AsyncSession, Depends(get_db_session)]):
     user_info = {"email": form_data.username, "password": form_data.password}

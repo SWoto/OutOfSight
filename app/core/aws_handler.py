@@ -1,4 +1,5 @@
-from typing import AsyncGenerator, Optional, Self, Tuple
+import json
+from typing import AsyncGenerator, Optional, Tuple
 import uuid
 import logging
 import asyncio
@@ -6,7 +7,7 @@ from fastapi import UploadFile
 
 from aiobotocore.session import get_session
 from aiobotocore.client import AioBaseClient
-from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
+from botocore.exceptions import ClientError
 from pydantic import UUID4
 
 from app.core.configs import settings
@@ -27,7 +28,45 @@ class S3DownloadError(Exception):
     pass
 
 
-class S3Handler():
+class BaseAIOBotoHandler():
+    @staticmethod
+    async def get_client(service: str) -> AioBaseClient:
+        session = get_session()
+        return session.create_client(
+            service,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION
+        )
+
+
+class SQSHandler(BaseAIOBotoHandler):
+    @classmethod
+    async def get_client(cls) -> AioBaseClient:
+        return await super().get_client('sqs')
+
+    @classmethod
+    async def send_message_to_sqs(cls, queue_url: str, body: dict, attributes: Optional[dict] = None):
+        async with await cls.get_client() as client:
+            logger.debug("Sending confirmation email.", extra={'body':
+                                                               body, 'MessageAttributes': attributes, 'queue_url': queue_url})
+            if attributes:
+                response = await client.send_message(
+                    QueueUrl=queue_url,
+                    MessageBody=json.dumps(body),
+                    MessageAttributes=json.dumps(attributes),
+                )
+            else:
+                response = await client.send_message(
+                    QueueUrl=queue_url,
+                    MessageBody=json.dumps(body),
+                )
+
+            logger.info("Message sent successfully.", extra={
+                        "MessageId": response.get('MessageId', None)})
+
+
+class S3Handler(BaseAIOBotoHandler):
     CHUNK_SIZE_BYTES: int = 8 * 1024 * 1024  # 8MB Chunks
 
     def __init__(self, settings):
@@ -35,15 +74,9 @@ class S3Handler():
         self.client = None
         self.s3_key: str | None = None
 
-    @staticmethod
-    async def get_client() -> AioBaseClient:
-        session = get_session()
-        return session.create_client(
-            's3',
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            region_name=settings.AWS_REGION
-        )
+    @classmethod
+    async def get_client(cls) -> AioBaseClient:
+        return await super().get_client('s3')
 
     @classmethod
     async def verify_or_create_bucket(cls, bucket_name, region):
@@ -90,32 +123,19 @@ class S3Handler():
         file_name = file_key.split("/")[-1]
         return bucket_name, file_key, file_name
 
+    async def _delete_s3_object(self, client, bucket: str, key: str):
+        await client.delete_object(Bucket=bucket, Key=key)
+        logger.info(f"Successfully deleted {key} from {bucket}.")
+
     async def delete_from_s3(self, file_key: str, file_id: UUID4) -> bool:
         bucket_name, file_key, _ = self.extract_s3_key(file_key)
         if not bucket_name:
             logger.error("Bucket name not found in S3 URI")
             return False
 
-        logger.warning("1"*88)
         try:
             async with await self.get_client() as client:
-                try:
-                    resp = await client.head_object(Bucket=bucket_name, Key=file_key)
-                except ClientError as e:
-                    raise S3DownloadError(f"Error retrieving file: {str(e)}")
-                except Exception as e:
-                    logger.error("Another error occurred when checking for file in S3",
-                                 extra={
-                                     "s3_bucket": bucket_name,
-                                     "s3_key": file_key,
-                                     "error_type": type(e).__name__,
-                                     "error_details": str(e),
-                                 })
-
-                resp = await client.delete_object(Bucket=bucket_name, Key=file_key)
-                logger.info(f"Successfully deleted {file_key} from {bucket_name}.",    extra={
-                            "resp": resp})
-
+                await self._delete_s3_object(client, bucket_name, file_key)
                 async with Session() as db:
                     file_obj = await FilesModel.find_by_id(file_id, db)
                     await file_obj.add_status(FileStatus.DELETED, db)
@@ -168,13 +188,6 @@ class S3Handler():
                         UploadId=upload_id,
                         MultipartUpload={'Parts': parts},
                     )
-
-                    logger.debug("File uploaded to S3 successfully",
-                                 extra={
-                                     "user_id": user_id,
-                                     "s3_bucket": bucket_name,
-                                     "s3_key": file_key,
-                                 })
                     return f"s3://{bucket_name}/{file_key}"
                 except Exception as e:
                     logger.error("Failed to upload file to S3",

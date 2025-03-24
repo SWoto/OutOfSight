@@ -10,7 +10,7 @@ from app.core.configs import settings, DevConfig, TestConfig
 from app.core.logging import configure_logging
 from app.api.v1.api import api_router
 from app.core.database import create_tables, create_database, initialize_default_values
-from app.core.s3_handler import S3Handler
+from app.core.aws_handler import S3Handler
 
 logger = logging.getLogger(__name__)
 
