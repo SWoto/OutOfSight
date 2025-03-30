@@ -87,23 +87,6 @@ def create_confirmation_token(subject: str) -> str:
     return create_token('confirmation_token', timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES), subject=subject)
 
 
-# TODO: Add an MQTT handler
-async def send_user_confirmation_email(email: EmailStr, confirmation_url: HttpUrl):
-    subject = "Successfully signed up to CF - Confirm your email"
-    body = (
-        f"Hi {email}! You have successfully signed up to the CloudFront (CF)."
-        " Please confirm your email by clicking on the"
-        f" following link: {confirmation_url}. \n"
-        "Note: This link is valid only for 30 minutes."
-    )
-    payload = {'subject': subject, 'body': body}
-
-    if isinstance(settings, DevConfig) or isinstance(settings, TestConfig):
-        logger.debug("User confirmation email data:", extra={**payload})
-
-    pass
-
-
 async def validate_token(token: Annotated[str, Depends(oauth2_scheme)], type: TokenType = "access_token") -> Optional[dict]:
     try:
         payload = jwt.decode(token, settings.JWT_SECRET,

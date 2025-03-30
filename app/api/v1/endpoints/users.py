@@ -13,7 +13,7 @@ from app.core.database import get_db_session
 from app.schemas import PostPutUserSchema, ReturnUserSchema, PatchUserSchema, LoginUserSchema, ReturnUserWithRoleIDSchema, PostPutUserWithRoleIDSchema, ReturnUserWithRoleObjSchema
 from app.models import BaseModel, UsersModel, RolesModel
 from app.core.security import get_hashed_password
-from app.core.auth import authenticate_user, Token, create_access_token, create_confirmation_token, send_user_confirmation_email, validate_token, get_current_user, blacklist_token, RoleChecker
+from app.core.auth import authenticate_user, Token, create_access_token, create_confirmation_token, validate_token, get_current_user, blacklist_token, RoleChecker
 
 router = APIRouter()
 
