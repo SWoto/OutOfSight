@@ -2,6 +2,8 @@
 
 CloudFlow is a file processing solution built with FastAPI, AWS EC2, AWS S3, SQS, and Lambda. It demonstrates how to handle file uploads, process files asynchronously, and store results in the cloud.
 
+Note, this is only a backend implementation and doesn’t have any UI developed as part of this.
+
 # Overview
 
 CloudFlow provides a backend API for uploading files and processing them asynchronously using AWS services. The workflow includes:
