@@ -314,7 +314,7 @@ echo "Setup complete. Git, Docker and Docker Compose are ready to use."
    After running the user data script, basic programs should already be installed. After installing docker and giving permissions to ec2-user, **it is recommended to reboot the EC2 instance**.
 
 
-## SQS - Creating a Queue
+## SQS - Creating Queues
 
 1. Navigate to Amazon SQS > Queues.
 1. Click Create queue.
@@ -322,6 +322,7 @@ echo "Setup complete. Git, Docker and Docker Compose are ready to use."
 1. Set the queue name to `cf-email-confirmation`.
 1. Click Create queue.
 
+Repeat for queue `cf-preprocessing-queue`.
 
 ## SES - Email Configuration
 To set up SES without purchasing a domain, you can register your own email as both the sender and recipient.
@@ -349,7 +350,7 @@ An IAM role is needed to grant permissions to the Lambda function.
 1. Click Create Role.
 
 
-## Lambda Function - Creating and Configuring the Function
+## Lambda Function - `lambda-sqs-ses-confirmation-email`
 
 ### Creating 
 
@@ -476,3 +477,224 @@ def lambda_handler(event, context):
 ```
 </details>
 
+## Lambda Function - `lambda-sqs-fileprocessing`
+
+A new Lambda function named **`lambda-sqs-fileprocessing`** was created to handle file status updates from messages received via SQS and persist metadata changes to an RDS PostgreSQL database.
+
+### Trigger
+
+- **SQS Queue**: `cf-preprocessing-queue`  
+  The function is triggered whenever a new message arrives in this queue.
+
+### Database Integration
+
+- This Lambda connects to an **RDS PostgreSQL** database named `cf-database`.
+- Connection credentials and database info are injected via **environment variables**.
+
+### Environment Variables
+
+Values are loaded dynamically and can be stored in a `.env` file locally:
+
+| Variable    | Description                   |
+|-------------|-------------------------------|
+| DB_HOST     | Host of the RDS database      |
+| DB_NAME     | Name of the database          |
+| DB_USER     | Database username             |
+| DB_PASSWORD | Database password             |
+| DB_PORT     | (Optional) Database port (default: 5432) |
+
+---
+
+### IAM Role and Permissions
+
+A custom execution role was attached to the Lambda function named **`lambda-sqs-s3-fileprocessing`** with the following policies:
+
+#### Managed Policy
+- `AWSLambdaSQSQueueExecutionRole` — allows processing SQS events.
+
+#### Custom Policy: `S3CloudFronteDevReadWrite`
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject"
+            ],
+            "Resource": "arn:aws:s3:::cloudfront-dev-sa-east-1/*"
+        }
+    ]
+}
+```
+
+---
+
+### Creating the `psycopg2` Layer for AWS Lambda
+
+To enable PostgreSQL support using `psycopg2`, a Lambda layer is required.
+
+#### Set Up Your Environment
+
+```bash
+mkdir -p psycopg2-layer/python
+cd psycopg2-layer/python
+```
+
+#### Install `psycopg2-binary`
+
+**For `x86_64` architecture:**
+
+```bash
+pip3 install --platform manylinux2014_x86_64 --target . --python-version 3.13 --only-binary=:all: psycopg2-binary
+```
+
+**For `arm64` architecture:**
+
+```bash
+pip3 install --platform manylinux2014_aarch64 --target . --python-version 3.13 --only-binary=:all: psycopg2-binary
+```
+
+#### Package the Layer
+
+```bash
+cd ..
+zip -r psycopg2-layer.zip python
+```
+
+#### Upload to AWS Lambda
+
+1. Open the **AWS Lambda Console**  
+1. Click **Layers** > **Create layer**  
+1. Name the layer (e.g., `psycopg2-layer`)  
+1. Upload `psycopg2-layer.zip`  
+1. Set **runtime** to Python 3.12  
+1. Select the correct **architecture**  
+1. Click **Create**  
+
+#### Attach Layer to Lambda
+
+1. Open the `lambda-sqs-fileprocessing` function  
+1. Go to the **Layers** section  
+1. Click **Add a layer**  
+1. Choose **Custom layers**  
+1. Select the created `psycopg2-layer`  
+1. Click **Add**
+
+---
+
+### Code Implementation 
+
+<details>
+<summary>Lambda Python code</summary>
+
+```python
+import json
+import boto3
+import os
+from botocore.exceptions import ClientError
+from typing import Optional, Tuple
+
+# Layer
+import psycopg2
+
+sqs = boto3.client('sqs')
+s3 = boto3.client('s3')
+
+def update_db_status(file_id: str):
+    try:
+        conn = psycopg2.connect(
+            host=os.environ['DB_HOST'],
+            dbname=os.environ['DB_NAME'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD'],
+            port=os.environ.get('DB_PORT', 5432)
+        )
+        cur = conn.cursor()
+
+        cur.execute("SELECT id FROM files_status WHERE name = %s;", ('processed',))
+        result = cur.fetchone()
+        if not result:
+            raise Exception("Status 'processed' not found in files_status table.")
+        status_id = result[0]
+
+        cur.execute("SELECT id FROM files_status_history WHERE file_id = %s AND status_id = %s;", (file_id, status_id))
+        history_exists = cur.fetchone()
+
+        if not history_exists:
+            cur.execute("""
+                INSERT INTO files_status_history (id, file_id, status_id, created_on, modified_on)
+                VALUES (gen_random_uuid(), %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+            """, (file_id, status_id))
+            print(f"Inserted new status history for file_id={file_id}")
+
+        conn.commit()
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+def extract_s3_key(full_s3_uri: str) -> Tuple[Optional[str], str, str, str]:
+    if full_s3_uri.startswith("s3://"):
+        parts = full_s3_uri[5:].split("/", 1)
+        bucket_name, file_key = parts[0], parts[1]
+    else:
+        file_key = full_s3_uri
+        bucket_name = None
+
+    parts = file_key.split("/")
+    file_id, file_name = parts[-2], parts[-1]
+    return bucket_name, file_key, file_id, file_name
+
+def lambda_handler(event, context):
+    for record in event['Records']:
+        message_body = json.loads(record['body'])
+
+        s3_path = message_body.get("s3_path")
+        file_type = message_body.get("file_type")
+        filename = message_body.get("filename")
+
+        if not all([s3_path, file_type, filename]):
+            message = 'Missing required fields in the msg_body'
+            print(message)
+            return {'statusCode': 400, 'body': json.dumps(message)}
+
+        bucket, key, file_id, file_name = extract_s3_key(s3_path)
+
+        """ # Optional metadata update (currently commented)
+        try:
+            head_response = s3.head_object(Bucket=bucket, Key=key)
+            original_metadata = head_response.get("Metadata", {})
+
+            updated_metadata = original_metadata.copy()
+            updated_metadata["filetype"] = file_type
+            updated_metadata["processed"] = "true"
+
+            s3.copy_object(
+                Bucket=bucket,
+                CopySource={'Bucket': bucket, 'Key': key},
+                Key=key,
+                Metadata=updated_metadata,
+                MetadataDirective='REPLACE',
+                ContentType=head_response.get("ContentType", "application/octet-stream")
+            )
+
+            print(f"Metadata updated for {key} in bucket {bucket}")
+        except ClientError as e:
+            print(f'Error updating metadata for object {key} in bucket {bucket}: {e}')
+            raise e
+        """
+
+        try:
+            update_db_status(file_id)
+            message = f'DB updated for file {key}'
+            print(message)
+            return {'statusCode': 200, 'body': json.dumps(message)}
+        except Exception as e:
+            print(f'Error updating DB for {key}: {e}')
+            raise e
+```
+</details>

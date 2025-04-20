@@ -60,7 +60,6 @@ async def post_user(user: PostPutUserSchema, request: Request, background_tasks:
     db.add(new_user)
     await db.commit()
 
-    # TODO: Add task for message brokers
     background_tasks.add_task(
         send_confirmation_email,
         nickname=new_user.nickname,

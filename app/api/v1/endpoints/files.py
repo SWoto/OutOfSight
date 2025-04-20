@@ -7,18 +7,29 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db_session
-from app.core.aws_handler import get_s3_handler, S3Handler, S3FileNotFoundError, S3DownloadError
+from app.core.aws_handler import SQSHandler, get_s3_handler, S3Handler, S3FileNotFoundError, S3DownloadError
 from app.models import FilesModel, UsersModel
 from app.core.auth import get_current_user
 from app.models.files import FileStatus
 from app.schemas import ReturnFileSchema, ReturnNestedHistoricalFileSchema
+from app.core.configs import settings
 
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
-MAX_FILE_SIZE = 100 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
+
+
+async def send_file_processing_queue(filename: str, file_type: str, s3_path: str, queue_url: str = settings.AWS_SQS_FILEPROCESSING_URL):
+    body = {
+        "action": "FileProcessing",
+        "filename": filename,
+        "file_type": file_type,
+        "s3_path": s3_path,
+    }
+    await SQSHandler.send_message_to_sqs(queue_url, body)
 
 
 async def check_file_and_user(file_id, user_id, db, remove_deleted: bool = False, remove_failed: bool = False) -> FilesModel:
@@ -61,6 +72,14 @@ async def post_file(file: Annotated[UploadFile, File(...)], current_user: Annota
     await db.refresh(new_file_model)
 
     await s3_handler.handle_file_upload(new_file_model.id, file)
+    await db.refresh(new_file_model)
+
+    background_tasks.add_task(
+        send_file_processing_queue,
+        filename=file.filename,
+        file_type=file_extension,
+        s3_path=new_file_model.path,
+    )
 
     return new_file_model
 

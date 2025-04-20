@@ -17,6 +17,8 @@ class FileStatus(Enum):
                  "description": "File is being uploaded to S3."}
     UPLOADED = {"name": "uploaded",
                 "description": "File was successfully uploaded to S3."}
+    PROCESSED = {"name": "processed",
+                 "description": "File was processed through a lambda function in AWS."}
     FAILED = {"name": "failed", "description": "Failed to upload file to S3."}
     DELETED = {"name": "deleted", "description": "File was deleted from S3."}
 

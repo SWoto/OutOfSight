@@ -48,6 +48,7 @@ class GlobalConfig(BaseConfig):
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: Optional[str] = None
     AWS_SQS_CONFIRMATION_EMAIL_URL: Optional[str] = None
+    AWS_SQS_FILEPROCESSING_URL: Optional[str] = None
 
     DBBaseModel: Any = declarative_base()
 
