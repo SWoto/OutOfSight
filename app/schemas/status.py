@@ -1,5 +1,5 @@
 from pydantic import BaseModel, PositiveFloat
-from typing import Literal
+from typing import Any, Dict, Literal, Optional
 from datetime import datetime
 
 
@@ -9,3 +9,22 @@ class PlainStatusSchema(BaseModel):
     uptime_secs: int
     cpu_usage: PositiveFloat
     memory_usage: PositiveFloat
+
+
+class DatabaseStatusSchema(BaseModel):
+    status: Literal["connected", "disconnected"]
+    latency_ms: float
+    error: Optional[str] = None
+
+
+class VersionInfoSchema(BaseModel):
+    python_version: str
+    platform: str
+    app_version: str
+
+
+class DetailedStatusSchema(PlainStatusSchema):
+    disk_usage: PositiveFloat
+    network_io: Dict[str, Any]
+    database: DatabaseStatusSchema
+    version: VersionInfoSchema

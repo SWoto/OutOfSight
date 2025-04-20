@@ -29,6 +29,14 @@ oauth2_scheme = OAuth2PasswordBearer(
 TokenType = Literal["access_token", "confirmation_token"]
 
 
+def is_valid_uuid(uuid_str, version):
+    try:
+        uuid.UUID(uuid_str, version=version)
+        return True
+    except ValueError:
+        return False
+
+
 def create_credentials_exception(detail: str) -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -111,6 +119,9 @@ async def validate_token(token: Annotated[str, Depends(oauth2_scheme)], type: To
     user_id = payload.get("sub")
     if not user_id:
         logger.info("Token is missing 'sub' field")
+        raise create_credentials_exception("Invalid Token")
+    if not is_valid_uuid(user_id, 4):
+        logger.info("'sub' field is not a valid UUID4")
         raise create_credentials_exception("Invalid Token")
 
     token_type = payload.get("type")

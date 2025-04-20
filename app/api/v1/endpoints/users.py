@@ -116,6 +116,12 @@ async def login_user(request: Request, form_data: Annotated[OAuth2PasswordReques
     return Token(access_token=create_access_token(subject=str(user.id)), token_type="bearer")
 
 
+@router.post('/logout',  tags=["Users", "Authentication"], summary="User Logout", description="Get authenticated token from user and blacklist it.")
+async def logout_user(token_payload: Annotated[dict, Depends(validate_token)], user_validation: Annotated[dict, Depends(get_current_user)]):
+    await blacklist_token(token_payload)
+    return {"detail": "Successfully logged out"}
+
+
 @router.get('/{id}', status_code=status.HTTP_200_OK, response_model=ReturnUserSchema, tags=["Users", "Role Dependency"], summary="Get User by ID", description="Retrieve a user's details by their ID if the requester has enough privilege or is the resource owner")
 async def get_user_by_id(id: UUID, db: Annotated[AsyncSession, Depends(get_db_session)], role_check: Annotated[None, Depends(RoleChecker(min_allowed_role=10, allow_self=True))]):
     return await find_by_id_and_exception(UsersModel, id, db)

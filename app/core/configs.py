@@ -9,6 +9,7 @@ class BaseConfig(BaseSettings):
     ENV_STATE: Optional[str] = None
     ALGORITHM: str = "HS256"
     TIMEZONE_OFFSET: int = -3
+    VERSION: str = "unknown"
 
     MIN_ROLE: int = 0
     MAX_ROLE: int = 99

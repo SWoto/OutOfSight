@@ -17,6 +17,23 @@ class BaseUser():
 
     API_USER_ENDPOINT = f"{settings.API_V1_STR}/user/"
 
+    @classmethod
+    @pytest.fixture
+    def mock_sqs(cls, mocker):
+        return mocker.patch('app.core.aws_handler.SQSHandler.send_message_to_sqs')
+
+    @classmethod
+    @pytest.fixture
+    def mock_confirmation_email(cls, mocker):
+        """Mock the send_confirmation_email function"""
+        return mocker.patch('app.api.v1.endpoints.users.send_confirmation_email')
+
+    @classmethod
+    @pytest.fixture
+    def mock_background(cls, mocker):
+        return mocker.patch('fastapi.BackgroundTasks.add_task',
+                            side_effect=lambda f, *args, **kwargs: f(*args, **kwargs))
+
     @staticmethod
     async def register_user(async_client: AsyncClient, user_data: dict) -> dict:
         int_user_data = user_data.copy()
@@ -40,7 +57,8 @@ class BaseUser():
 
     @classmethod
     @pytest.fixture
-    async def registered_user(cls, async_client: AsyncClient, session: AsyncSession) -> UsersModel:
+    async def registered_user(cls, async_client: AsyncClient, session: AsyncSession, mock_background, mock_confirmation_email) -> UsersModel:
+        "Returns registered user with mocked background task to avoid sending SQS triggers"
         response = await cls.register_user(async_client, cls.data)
 
         return response.json()
@@ -58,7 +76,7 @@ class BaseUser():
         response = await cls.login_user(async_client, cls.data["email"], cls.data["password"])
 
         return response.json()["access_token"]
-    
+
     @classmethod
     @pytest.fixture
     async def logged_in_admin_token(cls, async_client: AsyncClient) -> str:
