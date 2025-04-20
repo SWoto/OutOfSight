@@ -564,7 +564,7 @@
 					"response": []
 				},
 				{
-					"name": "Login User /user/login Copy",
+					"name": "Logout User /user/logout",
 					"event": [
 						{
 							"listen": "test",
@@ -574,23 +574,7 @@
 									"// Check if the response status code is 200",
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"// Parse the response body",
-									"var data = pm.response.json();",
-									"",
-									"// Verify that the access_token exists in the response",
-									"pm.test(\"Response contains access_token\", function () {",
-									"    pm.expect(data).to.have.property(\"access_token\");",
-									"});",
-									"",
-									"// Set the access_token as an environment variable if it exists",
-									"if (data.access_token) {",
-									"    pm.environment.set(\"access_token\", data.access_token);",
-									"    console.log(`Access token set to environment: ${data.access_token}`);",
-									"} else {",
-									"    console.error(\"Access token is missing in the response.\");",
-									"}"
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -599,6 +583,12 @@
 					],
 					"id": "4aad9888-5f46-4b9e-883e-c31339f1f08a",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "{{access_token}}"
+							}
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -607,16 +597,18 @@
 								{
 									"key": "username",
 									"value": "{{email}}",
-									"type": "text"
+									"type": "text",
+									"disabled": true
 								},
 								{
 									"key": "password",
 									"value": "{{rand_password}}",
-									"type": "text"
+									"type": "text",
+									"disabled": true
 								}
 							]
 						},
-						"url": "{{url}}:{{port}}{{API_STR}}/user/login",
+						"url": "{{url}}:{{port}}{{API_STR}}/user/logout",
 						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
 					},
 					"response": []
