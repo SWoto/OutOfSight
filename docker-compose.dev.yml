@@ -31,7 +31,7 @@ services:
     container_name: postgres_test
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '5433:5432'
     env_file:
       - app/core/.env
 

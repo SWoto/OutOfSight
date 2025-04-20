@@ -67,14 +67,14 @@ to force building the containers.
 
 **Folders and Permissions**
 
-As instructed in [Mapped Files and Directories](https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html#mapped-files-and-directories), database folder needs to have the propper permissions,
+As instructed in [Mapped Files and Directories](https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html#mapped-files-and-directories), database folder needs to have the proper permissions,
 ```
 sudo chown -R 5050:5050 <host_directory>
 ```
 
 Note: database folder is a shared volume defined in docker-compose.yml for pgadmin.
 
-### Local Enviroment
+### Local Environment
 
 Follow these steps to set up your local environment for development.
 
@@ -83,8 +83,7 @@ Follow these steps to set up your local environment for development.
 To begin, use the docker-compose file with the Dockerfile.dev for development and testing (`docker compose -f docker-compose.dev.yml up`). Access the container through VS Code's remote development feature and configure SSH port forwarding for remote connection to an AWS RDS database. This is done using EC2 permissions. For example, execute the following command: `ssh -i .ssh/<my-key>.pem -4 -fNT -L 3307:<my-AWS-PostgreSQL-Endpoint>:5432 ec2-user@<my-EC2-Public-IPv4-DNS>`.
 Example:
 ```bash
-ssh -i .ssh/my-key.pem -4 -fNT -L 3307:cf-database-1.acbd12345.region.rds.amazonaws.com:543
-2 ec2-user@ec2-12-34-56-78.region.compute.amazonaws.com
+ssh -i .ssh/my-key.pem -4 -fNT -L 3307:cf-database-1.acbd12345.region.rds.amazonaws.com:5432 ec2-user@ec2-12-34-56-78.region.compute.amazonaws.com
 ```
 
 Once the SSH tunnel is set up, modify the `.env` file parameters to point to the local forwarded port:
@@ -117,7 +116,7 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
    - Select **VPC and more** under the creation options.
 
 1. **Configuration**:
-   - **Name**: Chcfe a base name for all items (e.g., `cf`) and it will automatically rename all the other items.
+   - **Name**: Choose a base name for all items (e.g., `cf`) and it will automatically rename all the other items.
    - **IPv4 CIDR block**: Leave as default (`10.0.0.0/16`).
    - **Number of Availability Zones**: Set to `1`.
    - **Number of Subnets**: 
@@ -126,7 +125,7 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
    - **NAT Gateways**: Select **None**.
    - **VPC Endpoints**: Select **None**.
    - **DNS Options**: Ensure both are checked:
-     - **Enable DNS hostnames**
+     - **Enable DNS hostname**
      - **Enable DNS resolution**
 
 1. **Create**:
@@ -140,7 +139,7 @@ You can use the AWS VPC creation wizard ("VPC and more") for a streamlined setup
 1. **Create a VPC**:
    - Navigate to the **VPC Dashboard** and select **Create VPC** > **VPC only**.
    - Add a **Name Tag** (e.g., `cf-vpc`).
-   - Chcfe **IPv4 CIDR manual input** and set the **IPv4 CIDR block** to `10.0.0.0/16`.
+   - Choose **IPv4 CIDR manual input** and set the **IPv4 CIDR block** to `10.0.0.0/16`.
    - Select **No IPv6 CIDR block**.
    - Leave **Tenancy** as **Default**.
    - Click **Create VPC**.
@@ -232,6 +231,9 @@ This script will be use to pre install docker and git when the instance is launc
 
 For logs after installation, access it using SSH and run `sudo cat /var/log/cloud-init-output.log`.
 
+<details>
+<summary>Code for User Data in EC2</summary>
+
 ```shell
 #!/bin/bash
 # Update system packages
@@ -276,6 +278,8 @@ fi
 # Confirm the setup is complete
 echo "Setup complete. Git, Docker and Docker Compose are ready to use."
 ```
+</details>
+
 **NOTE:** check the information at "Install Required Software".
 
 1. **Other Settings**:
@@ -294,7 +298,7 @@ echo "Setup complete. Git, Docker and Docker Compose are ready to use."
    - Modify the **Inbound Rules** to allow the necessary traffic:
      - **HTTP (Port 80)**: For your IP only or open if needed.
      - **SSH (Port 22)**: For administrative access (from your IP only).
-         - If you're using MacOS, note that private relay might disturb this proccess if you're filtering with "My IP", given that safari is going to 'use' a different IP from VSCode. An alternativa is to set the 'MyIP' through another browswer, like firefox, instead of safari. 
+         - If you're using MacOS, note that private relay might disturb this process if you're filtering with "My IP", given that safari is going to 'use' a different IP from VSCode. An alternative is to set the 'MyIP' through another browser, like firefox, instead of safari. 
      - **Custom ICMP - IPv4, Echo Request**: To enable ping to the EC2, select anywhere IPv4 or from your IP only.
    - Save the updated rules.
 
@@ -309,4 +313,166 @@ echo "Setup complete. Git, Docker and Docker Compose are ready to use."
 1. **Install Required Software**:
    After running the user data script, basic programs should already be installed. After installing docker and giving permissions to ec2-user, **it is recommended to reboot the EC2 instance**.
 
----
+
+## SQS - Creating a Queue
+
+1. Navigate to Amazon SQS > Queues.
+1. Click Create queue.
+1. Keep all default parameters unchanged.
+1. Set the queue name to `cf-email-confirmation`.
+1. Click Create queue.
+
+
+## SES - Email Configuration
+To set up SES without purchasing a domain, you can register your own email as both the sender and recipient.
+
+1. Open Amazon SES (Simple Email Service).
+1. Navigate to Configuration > Identities.
+1. Click Create Identity.
+1. Select Email address and enter an email address that you own.
+1. Verify your email address by clicking the confirmation link in the email you receive.
+
+_Optional: If you need to send emails to unverified addresses, request production access for SES._
+
+
+## IAM Role - Creating the Required Permissions
+An IAM role is needed to grant permissions to the Lambda function.
+
+1. Open IAM (Identity and Access Management).
+1. Go to Access Management > Roles.
+1. Click Create Role.
+1. Under AWS Service, select Lambda as the use case.
+1. Attach the following permission policies:
+   - `AmazonSESFullAccess`
+   - `AWSLambdaSQSQueueExecutionRole`
+1. Name the role `lambda-sqs-ses-confirmation-email`.
+1. Click Create Role.
+
+
+## Lambda Function - Creating and Configuring the Function
+
+### Creating 
+
+1. Open AWS Lambda.
+1. Click Create Function.
+1. Choose Author from Scratch.
+1. Set the function name to lambda-sqs-email.
+1. Select Python 3.13 as the runtime.
+1. In the Permissions section, change the default execution role:
+   - Choose Use an existing role.
+   - Select the previously created role: `lambda-sqs-ses-confirmation-email`.
+1. Click Create function.
+
+### Configuring 
+
+1. Open the newly created Lambda function.
+1. In the Function overview, click Add Trigger.
+1. Select SQS as the trigger type.
+1. Choose the `cf-email-confirmation queue`.
+1. Click Add.
+
+#### Environment Variables 
+
+1. Add the following environment variables:
+   - `QUEUE_URL`: Set this to the SQS queue URL.
+   - `SENDER_EMAIL`: Set this to the verified email address in SES.
+
+#### Code Implementation 
+
+<details>
+<summary>Lambda Python code</summary>
+
+```python
+import json
+import boto3
+import os
+from botocore.exceptions import ClientError
+
+#Initialize AWS clients
+sqs = boto3.client('sqs')
+ses = boto3.client('ses')
+
+def lambda_handler(event, context):
+    for record in event['Records']:
+        message_body = json.loads(record['body'])
+
+        sender_email = os.environ.get('SENDER_EMAIL')
+        if not sender_email:
+            return {
+                'statusCode': 400,
+                'body': json.dumps('Sender email not configured in environment variables')
+            }
+
+        client_email = message_body.get("email")
+        client_nickname = message_body.get("nickname")
+        confirmation_url = message_body.get("confirmation_url")
+        if not all([client_email, client_nickname, confirmation_url]):
+            return {
+                'statusCode': 400,
+                'body': json.dumps('Missing required fields in the msg_body')
+            }
+        
+        #Get queue URL from environment variable
+        queue_url = os.environ.get('QUEUE_URL')
+        if not queue_url:
+            return {
+                'statusCode': 400,
+                'body': json.dumps('Queue URL not configured in environment variables')
+            }
+        
+        #Send confirmation email
+        try:
+            # for tests efect, we are going to use only the same email
+            response = ses.send_email(
+                Source=sender_email, #'no-reply@' + os.environ['DOMAIN'],
+                Destination={
+                    'ToAddresses': [
+                        sender_email,
+                    ]
+                },
+                Message={
+                    'Subject': {
+                            'Data': 'CloudFlow - Subscription Confirmation',
+                            'Charset': 'UTF-8',
+                    },
+                    'Body': {
+                        'Text': {
+                            'Data': (
+                                f"Hi {client_nickname}!\nYou have successfully signed up to the CloudFlow (CF)."
+                                " Please confirm your email by clicking on the"
+                                f" following link: {confirmation_url}. \n"
+                                "Note: This link is valid only for 30 minutes."
+                            ),
+                            'Charset': 'UTF-8',
+                        },
+                        'Html':{
+                            'Data':(
+                                f"""<html>
+                                    <body>
+                                        <p>Hi {client_nickname}!</p>
+                                        <p>You have successfully signed up to the CloudFlow (CF).</p>
+                                        <p>Please confirm your email by clicking on the following link: <a href="{confirmation_url}">Confirm Email</a></p>
+                                        <p>Note: This link is valid only for <b>30</b> minutes.</p>
+                                    </body>
+                                </html>"""
+                            ),
+                            'Charset': 'UTF-8',
+                        },
+                    }
+                }
+            )
+            print("Email sent successfully:", response)
+        except ClientError as e:
+            print(e)
+            return {
+                'statusCode': 500,
+                'body': json.dumps('Error sending email')
+            }
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Subscription successful')
+        }
+```
+</details>
+
